@@ -1,4 +1,12 @@
-- Testing & documentation
+## Speeding
+
+There are three modes of speeding:
+
+- [x] Everyone in the building
+- [ ] One other individual in the building
+- [x] One near individual with maximum matching
+
+## Others
 
 Discover the rate of vaccination that yields good results?
 
