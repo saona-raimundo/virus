@@ -10,6 +10,10 @@ edition = "2018"
 ndarray = "0.13.1"
 thiserror = "1.0.22"
 gamma = "0.8.1"
+rand = "0.7.3"
+strum = "0.20.0"
+strum_macros = "0.20.1"
 
 [dev-dependencies]
 test-case = "1.0.0"
+rand_pcg = "0.2.1"
