@@ -4,22 +4,29 @@
 //! [Virus Alert](https://ist.ac.at/en/education/ist-for-kids/virus-alert/) educational board game.
 //!
 
-pub use building::*;
-pub use individual::*;
-pub use population::*;
-pub use board::*;
-pub use recording::*;
+pub use building::{Building, BuildingBuilder};
+pub use individual::Individual;
+pub use population::Population;
+pub use board::Board;
+pub use recording::Recording;
 
-mod individual;
-mod building;
-mod population; 
-mod board;
-mod recording;
+/// Individuals that can be in different states of health.
+pub mod individual;
+/// Buildings which individuals visit.
+pub mod building;
+/// Aggregate of individuals. 
+pub mod population; 
+/// Aggregate of buildings and population.
+pub mod board;
+/// Resources used to keep track of the state of the game.
+pub mod recording;
 
+/// All you should need to play the game. 
 pub mod prelude {
-	pub use crate::{Board};
+	pub use crate::{Board, Individual, Population, board::BoardBuilder};
 }
 
+/// All errors in this crate.
 pub mod errors {
     use thiserror::Error;
 

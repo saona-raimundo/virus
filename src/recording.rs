@@ -7,10 +7,16 @@ use strum::IntoEnumIterator;
 /// Represents the state of the game and have high level commands.
 #[derive(Debug, Clone, PartialEq, Eq, Getters, MutGetters)]
 pub struct Recording {
-	/// Returns a table with the counting of individual types per day.  
+	/// Returns a "table" with the counting of individual types per day.
+	///
+	/// The quantity of each individual type present in the population is counted and 
+	/// the vector of numbers represents the count for each of the days that have passed.
     #[getset(get = "pub", get_mut = "pub")]
     counting_table: HashMap<Individual, Vec<usize>>,
-	/// Returns a table with the following information per day: Total infected, total sick and total healthy.  
+	/// Returns a "table" with the following information per day: Total infected, total sick and total healthy.  
+	///
+	/// The information provided in this table is the total number of 
+	/// infected, sick and healthy individuals respectively for each day that has been recorded.
     #[getset(get = "pub", get_mut = "pub")]
     diagram: [Vec<usize>; 3],
     /// Returns the current stage.  
@@ -94,7 +100,7 @@ impl Recording {
 		let diagram = self.diagram_mut();
 		diagram[0].push(newly_infected + last_counting_table[1] + last_counting_table[2]);
 		diagram[1].push(last_counting_table[3] + last_counting_table[4]);
-		diagram[2].push(last_counting_table[0] - newly_infected);
+		diagram[2].push(last_counting_table[0] - newly_infected + last_counting_table[5]);
 	}
 }
 

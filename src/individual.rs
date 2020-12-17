@@ -1,5 +1,7 @@
+use serde::{Serialize, Deserialize};
+
 /// Individual in the game, it represents a person.
-#[derive(strum_macros::EnumIter, Hash, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(strum_macros::EnumIter, Hash, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Individual {
     /// Healthy vulnerable person
     Healthy,

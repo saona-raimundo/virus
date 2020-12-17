@@ -106,7 +106,7 @@ mod tests {
 	}
 
 	#[test]
-	fn counting() {
+	fn counting1() {
 		let population = Population::default();
 		assert_eq!(population.counting(Individual::Healthy), 98);
 		assert_eq!(population.counting(Individual::Infected1), 2);

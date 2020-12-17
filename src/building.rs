@@ -4,9 +4,10 @@ use crate::errors::BuildingError;
 use crate::Individual;
 use gamma::graph::DefaultGraph;
 use ndarray::Array2;
+use serde::{Serialize, Deserialize};
 
 /// Spreding mode inside a building.
-#[derive(Debug, Hash, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Hash, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum Spreding {
     /// If there is one person infected in the building, then everyone is infected
     Everyone,
@@ -19,6 +20,13 @@ pub enum Spreding {
     /// as much people as possible, under the restriction that each of them infects only one other individual.
     OneNear,
 }
+
+impl Default for Spreding {
+    fn default() -> Self { 
+        Spreding::OneNear
+    }
+}
+
 
 /// Builder struct for `Building`.
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
@@ -42,31 +50,31 @@ impl BuildingBuilder {
     }
 
     /// Changes the size of the building
-    pub fn sized(mut self, columns: usize, rows: usize) -> Self {
+    pub fn with_size(mut self, columns: usize, rows: usize) -> Self {
         self.people = Array2::from_elem((rows, columns), None);
         self
     }
 
     /// Changes the size of the building
-    pub fn penalty(mut self, penalty: usize) -> Self {
+    pub fn with_penalty(mut self, penalty: usize) -> Self {
         self.penalty = penalty;
         self
     }
 
     /// Changes the spreding mode of the building
-    pub fn spreding(mut self, new_spreding: Spreding) -> Self {
+    pub fn with_spreding(mut self, new_spreding: Spreding) -> Self {
         self.spreding = new_spreding;
         self
     }
 
     /// Opens the building
-    pub fn open(mut self) -> Self {
+    pub fn and_is_open(mut self) -> Self {
         self.open = true;
         self
     }
 
     /// Closes the building
-    pub fn close(mut self) -> Self {
+    pub fn and_is_close(mut self) -> Self {
         self.open = false;
         self
     }

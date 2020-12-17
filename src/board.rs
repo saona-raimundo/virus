@@ -1,22 +1,99 @@
+use crate::building::Spreding;
 use core::fmt::Display;
 use crate::{BuildingBuilder, Building, Population, Individual, Recording};
-use getset::Getters;
+use getset::{Getters, Setters, MutGetters};
 use strum::IntoEnumIterator;
+use serde::{Serialize, Deserialize};
+
+/// Builder for the `Board`.
+///
+/// # Remarks
+///
+/// Although `Board` can be constructed from `new` and `set_spreding`, this 
+/// struct is specifically thought to be serialized and deserialized in a human-frindly way,
+/// specially useful as a configuration file.
+///   
+/// A `Board` could be in the middle of a game, derefore (de)serialization 
+/// turns out to be less human-friendly.
+#[derive(Debug, Clone, PartialEq, Eq, Getters, Setters, MutGetters, Serialize, Deserialize, Default)]
+pub struct BoardBuilder {
+	/// Number of healthy individuals
+    #[getset(get = "pub", set = "pub", get_mut = "pub")]
+    healthy: usize,
+    /// Number of infected1 individuals
+    #[getset(get = "pub", set = "pub", get_mut = "pub")]
+    infected1: usize,
+    /// Number of infected2 individuals
+    #[getset(get = "pub", set = "pub", get_mut = "pub")]
+    infected2: usize,
+    /// Number of infected3 individuals
+    #[getset(get = "pub", set = "pub", get_mut = "pub")]
+    infected3: usize,
+    /// Number of sick individuals
+    #[getset(get = "pub", set = "pub", get_mut = "pub")]
+    sick: usize,
+    /// Number of inmune individuals
+    #[getset(get = "pub", set = "pub", get_mut = "pub")]
+    inmune: usize,
+    /// Current state of the buildings in the game
+    #[getset(get = "pub", set = "pub", get_mut = "pub")]
+    buildings: Vec<(usize, usize)>,
+    /// Spreding mode
+    #[getset(get = "pub", set = "pub", get_mut = "pub")]
+    spreding: Spreding,
+}
+
+impl BoardBuilder {
+	pub fn build(self) -> Board {
+		// Population
+		let mut population_vec = vec![Individual::Healthy; self.healthy];
+		population_vec.append(&mut vec![Individual::Infected1; self.infected1]);
+		population_vec.append(&mut vec![Individual::Infected2; self.infected2]);
+		population_vec.append(&mut vec![Individual::Infected3; self.infected3]);
+		population_vec.append(&mut vec![Individual::Sick; self.sick]);
+		population_vec.append(&mut vec![Individual::Inmune; self.inmune]);
+		let population = Population::from(population_vec);
+
+		// Buildings
+		let buildings = self.buildings.iter().map(|&(cols, rows)| 
+			BuildingBuilder::new("Defult")
+				.with_size(cols, rows)
+				.with_spreding(self.spreding)
+				.and_is_open()
+				.build()
+			).collect();
+
+		Board::new(population, buildings)
+	}
+}
+
 
 /// Represents the state of the game and have high level commands.
 #[derive(Debug, Clone, PartialEq, Eq, Getters)]
 pub struct Board {
+	/// Current population in the game
+    #[getset(get = "pub")]
     population: Population,
+    /// Current state of the buildings in the game
+    #[getset(get = "pub")]
     buildings: Vec<Building>,
     inactive: Vec<Individual>, 
+    /// Recording device
     #[getset(get = "pub")]
     recording: Recording,
 }
 
 impl Board {
-	/// Returns the current state of the buildings
-	pub fn buildings(&self) -> &Vec<Building> {
-		&self.buildings
+	/// Creates a new board with the specified population and buildings as default.
+	pub fn new(population: Population, buildings: Vec<Building>) -> Self {
+		let default = Board::default();
+		let recording = Recording::new(population.clone(), buildings.clone());
+		Board {
+			population,
+			buildings,
+			recording,
+			..default
+		}
 	}
 
 	/// Advance the specified number of stages in the game.
@@ -129,6 +206,16 @@ impl Board {
 		self
 	}
 
+	/// Changes the spreding mode. 
+	///
+	/// See `Spreding` for more. 
+	pub fn set_spreding(&mut self, new_spreding: Spreding) -> &mut Self {
+		for building in self.buildings.iter_mut() {
+			building.set_spreding(new_spreding);
+		}
+		self
+	}
+
 	/// Returns the current state of the counting table
 	pub fn counting_table(&self) -> Vec<(String, &Vec<usize>)> {
 		Individual::iter().map(|i| (i.to_string(), &self.recording().counting_table()[&i])).collect()
@@ -136,16 +223,27 @@ impl Board {
 }
 
 impl Default for Board {
+	/// Returns an instance of `Board` with default configuration
+	///
+	/// # Default
+	///
+	/// Some default values.
+	/// ```
+	/// # use virus_alert::prelude::*;
+	/// let board = Board::default();
+	/// assert_eq!(board.population().len(), 100);
+	/// assert_eq!(board.buildings().len(), 8);
+	/// ```
 	fn default() -> Self { 
 		let population = Population::default();
-		let concert_hall = BuildingBuilder::new("Concert Hall").sized(5, 4).build();
-		let bakery = BuildingBuilder::new("Bakery").sized(2, 2).build();
-		let school = BuildingBuilder::new("School").sized(4, 4).build();
-		let pharmacy = BuildingBuilder::new("Pharmacy").sized(2, 2).build();
-		let restaurant = BuildingBuilder::new("Restaurant").sized(3, 2).build();
-		let gym = BuildingBuilder::new("Gym").sized(4, 2).build();
-		let supermarket = BuildingBuilder::new("Supermarket").sized(2, 2).build();
-		let shopping_center = BuildingBuilder::new("Shopping Center").sized(4, 2).build();
+		let concert_hall = BuildingBuilder::new("Concert Hall").with_size(5, 4).build();
+		let bakery = BuildingBuilder::new("Bakery").with_size(2, 2).build();
+		let school = BuildingBuilder::new("School").with_size(4, 4).build();
+		let pharmacy = BuildingBuilder::new("Pharmacy").with_size(2, 2).build();
+		let restaurant = BuildingBuilder::new("Restaurant").with_size(3, 2).build();
+		let gym = BuildingBuilder::new("Gym").with_size(4, 2).build();
+		let supermarket = BuildingBuilder::new("Supermarket").with_size(2, 2).build();
+		let shopping_center = BuildingBuilder::new("Shopping Center").with_size(4, 2).build();
 		let buildings = vec![
 			concert_hall,
 			bakery,
@@ -186,12 +284,7 @@ mod tests {
 	fn visit_building1() {
 		let population = Population::from(vec![Individual::Healthy]);
 		let buildings = vec![Building::unchecked_from(array![[None]])];
-		let default = Board::default();
-		let mut board = Board{
-			population,
-			buildings,
-			..default
-		};
+		let mut board = Board::new(population, buildings);
 		assert_eq!(board.visit_building(0), &Building::unchecked_from(array![[Individual::Healthy]]));
 	}
 
@@ -199,26 +292,15 @@ mod tests {
 	fn visit_building2() {
 		let population = Population::from(vec![Individual::Sick]);
 		let buildings = vec![Building::unchecked_from(array![[None]])];
-		let default = Board::default();
-		let mut board = Board{
-			population,
-			buildings,
-			..default
-		};
+		let mut board = Board::new(population, buildings);
 		assert_eq!(board.visit_building(0), &Building::unchecked_from(array![[None]]));
 	}
 
 	#[test]
 	fn visit_building3() {
-		let population = Population::from(vec![Individual::Infected1, Individual::Healthy]);
+		let population = Population::from(vec![Individual::Infected1, Individual::Infected1]);
 		let buildings = vec![Building::unchecked_from(array![[Individual::Healthy]])];
-		let default = Board::default();
-		let mut board = Board{
-			population,
-			buildings,
-			..default
-		};
-		board.visit_building(0);
+		let mut board = Board::new(population, buildings);
 		assert_eq!(board.visit_building(0), &Building::unchecked_from(array![[Individual::Healthy]]));
 	}
 
@@ -226,12 +308,7 @@ mod tests {
 	fn propagate() {
 		let population = Population::from(vec![Individual::Healthy, Individual::Infected1]);
 		let buildings = vec![Building::unchecked_from(array![[Individual::Healthy, Individual::Infected1]])];
-		let default = Board::default();
-		let mut board = Board {
-			population,
-			buildings,
-			..default
-		};
+		let mut board = Board::new(population, buildings);
 		board.propagate();
 		assert_eq!(board.buildings()[0], Building::unchecked_from(array![[Individual::Infected1, Individual::Infected2]]));
 	}
@@ -241,12 +318,7 @@ mod tests {
 	fn close() {
 		let population = Population::from(vec![Individual::Healthy, Individual::Infected1]);
 		let buildings = vec![Building::new(2, 1, "My bulding")];
-		let default = Board::default();
-		let mut board = Board {
-			population,
-			buildings,
-			..default
-		};
+		let mut board = Board::new(population, buildings);
 		board.visit();
 		board.close("My bulding");
 	}
