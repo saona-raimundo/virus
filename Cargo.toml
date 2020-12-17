@@ -13,6 +13,7 @@ gamma = "0.8.1"
 rand = "0.7.3"
 strum = "0.20.0"
 strum_macros = "0.20.1"
+getset = "0.1.1"
 
 [dev-dependencies]
 test-case = "1.0.0"

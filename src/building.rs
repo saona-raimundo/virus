@@ -6,7 +6,7 @@ use gamma::graph::DefaultGraph;
 use ndarray::Array2;
 
 /// Spreding mode inside a building.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Hash, Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Spreding {
     /// If there is one person infected in the building, then everyone is infected
     Everyone,
@@ -20,25 +20,142 @@ pub enum Spreding {
     OneNear,
 }
 
+/// Builder struct for `Building`.
+#[derive(Debug, Hash, Clone, PartialEq, Eq)]
+pub struct BuildingBuilder {
+    people: Array2<Option<Individual>>,
+    spreding: Spreding,
+    name: String,
+    penalty: usize,
+    open: bool, 
+}
+
+impl BuildingBuilder {
+
+    /// Creates a new and empty building builder
+    pub fn new<S: Display>(name: S) -> Self {
+        let default = BuildingBuilder::default();
+        BuildingBuilder { 
+            name: name.to_string(),
+            ..default
+        }
+    }
+
+    /// Changes the size of the building
+    pub fn sized(mut self, columns: usize, rows: usize) -> Self {
+        self.people = Array2::from_elem((rows, columns), None);
+        self
+    }
+
+    /// Changes the size of the building
+    pub fn penalty(mut self, penalty: usize) -> Self {
+        self.penalty = penalty;
+        self
+    }
+
+    /// Changes the spreding mode of the building
+    pub fn spreding(mut self, new_spreding: Spreding) -> Self {
+        self.spreding = new_spreding;
+        self
+    }
+
+    /// Opens the building
+    pub fn open(mut self) -> Self {
+        self.open = true;
+        self
+    }
+
+    /// Closes the building
+    pub fn close(mut self) -> Self {
+        self.open = false;
+        self
+    }
+
+
+    /// Returns the corresponding building
+    pub fn build(self) -> Building {
+        Building {
+            people: self.people,
+            spreding: self.spreding,
+            name: self.name,
+            penalty: self.penalty,
+            open: self.open,
+        }
+    }
+}
+
+impl Default for BuildingBuilder {
+    fn default() -> Self { 
+        BuildingBuilder{
+            people: Array2::from_elem((0, 0), None),
+            spreding: Spreding::OneNear,
+            name: String::from("Default"),
+            penalty: 0,
+            open: true,
+        }
+    }
+}
+
 /// Building in the board game where spreading can happen.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub struct Building {
     people: Array2<Option<Individual>>,
     spreding: Spreding,
     name: String,
+    penalty: usize,
+    open: bool,
 }
 
 impl Building {
 	/// Creates a new and empty building
 	///
 	/// The default mode of propagation is `OneNear`, see `spreding` method for more.
-	pub fn new(columns: usize, rows: usize) -> Self {
+	pub fn new<S: Display>(columns: usize, rows: usize, name: S) -> Self {
         let default = Building::default();
 		Building{ 
 			people: Array2::from_elem((rows, columns), None),
+            name: name.to_string(),
 			..default
 		}
 	}
+
+    /// Returns true if the building is open
+    pub fn is_open(&self) -> bool {
+        self.open
+    }
+
+    /// Returns true if the building is close
+    pub fn is_close(&self) -> bool {
+        !self.open
+    }
+
+    /// Opens the building
+    pub fn open(&mut self) -> &mut Self {
+        self.open = true;
+        self
+    }
+
+    /// Closes the building
+    ///
+    /// # Panics
+    ///
+    /// If the building is not empty
+    pub fn close(&mut self) {
+        assert!(self.is_empty());
+        self.open = false;
+    }
+
+    /// Rerturns the penalty of the building, which is the cost of closing the building
+    pub fn penalty(&self) -> &usize {
+        &self.penalty
+    }
+
+    /// Changes the penalty of the building
+    pub fn set_penalty(&mut self, new_penalty: usize) -> &mut Self {
+        self.penalty = new_penalty;
+        self
+    }
+
     /// Returns the name of the building
     ///
     /// The default value is "Default".
@@ -55,8 +172,9 @@ impl Building {
     /// building.set_name("My name");
     /// assert_eq!(building.name(), &"My name".to_string());
     /// ```
-    pub fn set_name<S: Display>(&mut self, name: S) {
+    pub fn set_name<S: Display>(&mut self, name: S) -> &mut Self {
         self.name = name.to_string();
+        self
     }
 	/// Returns the people who are currently in the building
 	pub fn people(&self) -> &Array2<Option<Individual>> {
@@ -67,8 +185,9 @@ impl Building {
 		&self.spreding
 	}
 	/// Sets the spreding mode of the building
-	pub fn set_spreding(&mut self, new_spreding: Spreding) {
+	pub fn set_spreding(&mut self, new_spreding: Spreding) -> &mut Self {
 		self.spreding = new_spreding;
+        self
 	}
     /// Return the shape of the array as a slice.
     pub fn shape(&self) -> &[usize] {
@@ -120,12 +239,13 @@ impl Building {
     }
 
     /// Propagates the infection
-    pub fn propagate(&mut self) {
+    pub fn propagate(&mut self) -> &mut Self {
     	match self.spreding {
     		Spreding::Everyone => self.propagate_everyone(),
     		Spreding::One => self.propagate_one(),
     		Spreding::OneNear => self.propagate_onenear()
     	}
+        self
     }
 
     /// Propagates by infecting one healthy individual per infected indiviual, if possible
@@ -235,11 +355,7 @@ impl Building {
 
 impl Default for Building {
     fn default() -> Self { 
-        Building{
-            people: Array2::from_elem((0, 0), None),
-            spreding: Spreding::OneNear,
-            name: String::from("Default")
-        }
+        BuildingBuilder::default().build()
     }
 }
 
@@ -346,7 +462,7 @@ mod tests {
 		let array = array![[Individual::Healthy, Individual::Infected1], [Individual::Healthy, Individual::Infected1]];
 		let building = Building::try_from(array.clone()).expect("There is a sick one!");
 		assert_eq!(building.shape(), [2, 2]);
-		assert_eq!(Building::new(3, 4).shape(), [4, 3]);
+		assert_eq!(Building::new(3, 4, "").shape(), [4, 3]);
 		
 	}
 
@@ -355,7 +471,7 @@ mod tests {
 		let array = array![[None, None], [None, None]];
 		let building = Building::try_from(array).expect("There is a sick one!");
 		assert!(building.is_empty());
-		assert!(Building::new(3, 4).is_empty());
+		assert!(Building::new(3, 4, "").is_empty());
 	}
 
 	#[test]
@@ -372,12 +488,12 @@ mod tests {
 		let mut building = Building::try_from(array).expect("There is a sick one!");
 		assert_eq!(building.try_push(Individual::Healthy), Err(BuildingError::Full));
 
-		let mut building = Building::new(1, 1);
+		let mut building = Building::new(1, 1, "");
 		assert!(!building.is_full());
 		building.try_push(Individual::Healthy).expect("can not push when it should!");
 		assert!(building.is_full());
 
-		let mut building = Building::new(2, 1);
+		let mut building = Building::new(2, 1, "");
 		building.try_push(Individual::Healthy).expect("can not push when it should!");
 		assert_eq!(building.people(), &array![[Some(Individual::Healthy), None]]);
 	}

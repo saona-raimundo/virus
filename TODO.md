@@ -1,24 +1,22 @@
-## Speeding
+## Records
 
-There are three modes of speeding:
+- Counting table
+- Diagram
+- Timeline
 
-- [x] Everyone in the building
-- [ ] One other individual in the building
-- [x] One near individual with maximum matching
 
-## Others
+
+## Applications
+
+### Rate of vaccination
 
 Discover the rate of vaccination that yields good results?
 
+### Challenge
+
 Possibly taking down some buildings
 
-Sampling without replacement
-
-- https://docs.rs/rand/0.7.3/rand/seq/trait.SliceRandom.html#tymethod.choose_weighted
-
-Infection phase
-- Maximum neighbour
-	- https://docs.rs/gamma/0.8.1/gamma/matching/fn.maximum_matching.html
+## Others
 
 Output
 - One simulation

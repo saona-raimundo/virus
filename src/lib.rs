@@ -8,11 +8,13 @@ pub use building::*;
 pub use individual::*;
 pub use population::*;
 pub use board::*;
+pub use recording::*;
 
 mod individual;
 mod building;
 mod population; 
 mod board;
+mod recording;
 
 pub mod errors {
     use thiserror::Error;

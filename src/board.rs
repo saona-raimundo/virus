@@ -1,5 +1,5 @@
-
-use crate::{Building, Population, Individual};
+use core::fmt::Display;
+use crate::{BuildingBuilder, Building, Population, Individual, Recording};
 
 /// Represents the state of the game and have high level commands.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -7,6 +7,7 @@ pub struct Board {
     population: Population,
     buildings: Vec<Building>,
     inactive: Vec<Individual>, 
+    recording: Recording,
 }
 
 impl Board {
@@ -14,7 +15,21 @@ impl Board {
 	pub fn buildings(&self) -> &Vec<Building> {
 		&self.buildings
 	}
+
+	/// Advance the specified number of stages in the game.
+	///
+	/// # Remarks
+	///
+	/// This is equivalent to use `advance` many times.
+	pub fn advance_many(&mut self, num_stages: usize) {
+		for _ in 0..num_stages {
+			self.advance()
+		}
+	}
+
 	/// Advance a stage in the game.
+	///
+	/// # Remarks
 	///
 	/// This is a short method for all steps involved in a stage
 	pub fn advance(&mut self) {
@@ -30,7 +45,7 @@ impl Board {
 	/// # Errors
 	///
 	/// If visiting any of the building fails.
-	pub fn visit(&mut self) {
+	pub fn visit(&mut self) -> &mut Self {
 		self.population.shuffle(&mut rand::thread_rng());
 		for index in 0..self.buildings.len() {
 			self.visit_building(index);
@@ -41,13 +56,11 @@ impl Board {
 				None => break,
 			}
 		}
-		// for i in self.population {
-		// 	self.inactive.push(i);
-		// }
+		self
 	}
 
 	fn visit_building(&mut self, index: usize) -> &Building {
-		while !self.buildings[index].is_full() {
+		while !self.buildings[index].is_full() & self.buildings[index].is_open() {
 			match self.population.next() {
 				Some(i) => {
 					match i {
@@ -66,68 +79,64 @@ impl Board {
 	/// In this step, virus is propagated in each building.
 	pub fn propagate(&mut self) {
 		for building in self.buildings.iter_mut() {
-			building.propagate()
+			building.propagate();
 		}
 	}
 
 	/// Third step of any stage
 	///
-	/// In this step, the population returns home and changes are recorded.
-	pub fn go_back(&mut self) {
-		let mut new_population = Vec::new();
+	/// In this step, the population returns home, changes are recorded and the number of newly infected is returned.
+	pub fn go_back(&mut self) -> usize {
+		let mut new_vec = Vec::new();
 		// Collect from buildings
 		for building in self.buildings.iter_mut() {
-			new_population.append(&mut building.empty())
+			new_vec.append(&mut building.empty())
 		}
-		new_population.append(&mut self.inactive);
-		todo!()
-		// counting_table and diagram 
+		new_vec.append(&mut self.inactive);
+		let new_population = Population::from(new_vec);
+
+		let newly_infected: usize = new_population.counting(Individual::Infected1) - self.population.counting(Individual::Infected1);
+		// Update
+		self.population = new_population;
+		self.recording.register(newly_infected, &self.buildings);
+
+		newly_infected
+	}
+
+	/// Closes a building
+	pub fn close<S: Display>(&mut self, name: S) -> &mut Self {
+		let name = name.to_string();
+		for building in self.buildings.iter_mut() {
+			if building.name() == &name {
+				building.close();
+			}
+		}
+		self
+	}
+
+	/// Opens a building
+	pub fn open<S: Display>(&mut self, name: S) -> &mut Self {
+		let name = name.to_string();
+		for building in self.buildings.iter_mut() {
+			if building.name() == &name {
+				building.open();
+			}
+		}
+		self
 	}
 }
 
 impl Default for Board {
 	fn default() -> Self { 
 		let population = Population::default();
-		let concert_hall = {
-			let mut building = Building::new(5, 4);
-			building.set_name("Concert Hall");
-			building
-		};
-		let bakery = {
-			let mut building = Building::new(2, 2);
-			building.set_name("Bakery");
-			building
-		};
-		let school = {
-			let mut building = Building::new(4, 4);
-			building.set_name("School");
-			building
-		};
-		let pharmacy = {
-			let mut building = Building::new(2, 2);
-			building.set_name("Pharmacy");
-			building
-		};
-		let restaurant = {
-			let mut building = Building::new(3, 2);
-			building.set_name("Restaurant");
-			building
-		};
-		let gym = {
-			let mut building = Building::new(4, 2);
-			building.set_name("Gym");
-			building
-		};
-		let supermarket = {
-			let mut building = Building::new(2, 2);
-			building.set_name("Supermarket");
-			building
-		};
-		let shopping_center = {
-			let mut building = Building::new(4, 2);
-			building.set_name("Shopping Center");
-			building
-		};
+		let concert_hall = BuildingBuilder::new("Concert Hall").sized(5, 4).build();
+		let bakery = BuildingBuilder::new("Bakery").sized(2, 2).build();
+		let school = BuildingBuilder::new("School").sized(4, 4).build();
+		let pharmacy = BuildingBuilder::new("Pharmacy").sized(2, 2).build();
+		let restaurant = BuildingBuilder::new("Restaurant").sized(3, 2).build();
+		let gym = BuildingBuilder::new("Gym").sized(4, 2).build();
+		let supermarket = BuildingBuilder::new("Supermarket").sized(2, 2).build();
+		let shopping_center = BuildingBuilder::new("Shopping Center").sized(4, 2).build();
 		let buildings = vec![
 			concert_hall,
 			bakery,
@@ -138,14 +147,31 @@ impl Default for Board {
 			supermarket,
 			shopping_center,
 		];
-		
-		Board{ population, buildings, inactive: Vec::new()}
+		let recording = Recording::new(population.clone(), buildings.clone());
+
+		Board{ population, buildings, inactive: Vec::new(), recording }
 	}
 }
 #[cfg(test)]
 mod tests {
 	use super::*;
 	use ndarray::array;
+
+
+	#[test]
+	fn visit1() {
+		let population = Population::from(vec![Individual::Healthy]);
+		let buildings = vec![Building::unchecked_from(array![[None]]), Building::unchecked_from(array![[None]])];
+		let default = Board::default();
+		let mut board = Board{
+			population,
+			buildings,
+			..default
+		};
+		board.visit();
+		let expected = vec![Building::unchecked_from(array![[Individual::Healthy]]), Building::unchecked_from(array![[None]])];
+		assert_eq!(board.buildings(), &expected);
+	}
 
 	#[test]
 	fn visit_building1() {
@@ -199,5 +225,20 @@ mod tests {
 		};
 		board.propagate();
 		assert_eq!(board.buildings()[0], Building::unchecked_from(array![[Individual::Infected1, Individual::Infected2]]));
+	}
+
+	#[test]
+	#[should_panic]
+	fn close() {
+		let population = Population::from(vec![Individual::Healthy, Individual::Infected1]);
+		let buildings = vec![Building::new(2, 1, "My bulding")];
+		let default = Board::default();
+		let mut board = Board {
+			population,
+			buildings,
+			..default
+		};
+		board.visit();
+		board.close("My bulding");
 	}
 }
