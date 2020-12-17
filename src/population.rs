@@ -26,7 +26,7 @@ impl Population {
 	/// # Examples
 	/// 
 	/// ```
-	/// # use virus::Population;
+	/// # use virus_alert::Population;
 	/// let mut population = Population::default();
 	/// population.shuffle(&mut rand::thread_rng());
 	/// println!("A random sapmle (without replacement) is: {:?}", population.next());

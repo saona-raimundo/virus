@@ -167,7 +167,7 @@ impl Building {
     /// # Examples
     ///
     /// ```
-    /// # use virus::Building;
+    /// # use virus_alert::Building;
     /// let mut building = Building::default();
     /// building.set_name("My name");
     /// assert_eq!(building.name(), &"My name".to_string());

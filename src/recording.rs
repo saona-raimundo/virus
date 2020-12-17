@@ -62,8 +62,7 @@ impl Recording {
 		// self.register_penalty(buildings);
 		// self.register_daily_score(buildings);
 		self.increment_time();
-		// self
-		todo!()		
+		self
 	}
 
 	fn register_counting_table(&mut self, newly_infected: usize) {

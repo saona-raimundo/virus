@@ -16,6 +16,10 @@ mod population;
 mod board;
 mod recording;
 
+pub mod prelude {
+	pub use crate::{Board};
+}
+
 pub mod errors {
     use thiserror::Error;
 

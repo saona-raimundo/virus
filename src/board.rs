@@ -1,12 +1,15 @@
 use core::fmt::Display;
 use crate::{BuildingBuilder, Building, Population, Individual, Recording};
+use getset::Getters;
+use strum::IntoEnumIterator;
 
 /// Represents the state of the game and have high level commands.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Getters)]
 pub struct Board {
     population: Population,
     buildings: Vec<Building>,
     inactive: Vec<Individual>, 
+    #[getset(get = "pub")]
     recording: Recording,
 }
 
@@ -92,10 +95,11 @@ impl Board {
 		for building in self.buildings.iter_mut() {
 			new_vec.append(&mut building.empty())
 		}
+		let newly_infected: usize = new_vec.iter().filter(|&&i| i == Individual::Infected1).count();
+
 		new_vec.append(&mut self.inactive);
 		let new_population = Population::from(new_vec);
 
-		let newly_infected: usize = new_population.counting(Individual::Infected1) - self.population.counting(Individual::Infected1);
 		// Update
 		self.population = new_population;
 		self.recording.register(newly_infected, &self.buildings);
@@ -123,6 +127,11 @@ impl Board {
 			}
 		}
 		self
+	}
+
+	/// Returns the current state of the counting table
+	pub fn counting_table(&self) -> Vec<(String, &Vec<usize>)> {
+		Individual::iter().map(|i| (i.to_string(), &self.recording().counting_table()[&i])).collect()
 	}
 }
 

@@ -1,5 +1,5 @@
 [package]
-name = "virus"
+name = "virus_alert"
 version = "0.1.0"
 authors = ["raimundo saona <rasa200@gmail.com>"]
 edition = "2018"
