@@ -1,37 +1,28 @@
 use virus_alert::prelude::*;
-use text_io::read;
+use ron::de::from_reader;
+
+const CONFIG_PATH: &str = "config.ron";
 
 fn main() {
-	let mut vaccinated: usize = 100;
-	while vaccinated > 98 {
-		println!("Please insert the number of vaccinated individuals (at most 98).");
-		vaccinated = read!(); 
-	}
-
-	let mut board = board(vaccinated);
-	board.advance_many(10);
-
-	println!("Vaccinated: {}", vaccinated);
-
-	println!("COUNTING TABLE");
-	for (i, vec) in board.counting_table() {
-		println!("{}\n{:?}", i, vec);
-	}
-	
-	println!("\nDIAGRAM");
-	let totals = board.recording().diagram();
-	println!("Infected\n{:?}", totals[0]);
-	println!("Sick\n{:?}", totals[1]);
-	println!("Healthy\n{:?}", totals[2]);
+	let simulation = initialize();
+	let report = simulation.run();
+	println!("{:?}", report);
 }
 
-fn board(vaccinated: usize) -> Board {
-	assert!(vaccinated <= 98);
-	let mut v = vec![Individual::Healthy; 98 - vaccinated];
-	v.append(&mut vec![Individual::Infected1; 2]);
-	v.append(&mut vec![Individual::Inmune; vaccinated]);
-	let population = Population::from(v);
-
-	let default = Board::default();
-	Board::new(population, default.buildings().clone())
+fn initialize() -> Simulation {
+	let f = match std::fs::File::open(CONFIG_PATH) {
+		Ok(x) => x,
+		Err(e) => {
+			println!("Failed opening file, please locate it in the same directory as the executable file.\nFor more info: {}", e);
+            std::process::exit(1);
+		},
+	};
+    let b: SimulationBuilder = match from_reader(f) {
+        Ok(x) => x,
+        Err(e) => {
+            println!("Failed to load config: {}", e);
+            std::process::exit(1);
+        }
+    };
+    b.build()
 }

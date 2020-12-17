@@ -1,6 +1,5 @@
-use crate::building::Spreding;
 use core::fmt::Display;
-use crate::{BuildingBuilder, Building, Population, Individual, Recording};
+use crate::{BuildingBuilder, Building, Population, Individual, Recording, building::Spreding};
 use getset::{Getters, Setters, MutGetters};
 use strum::IntoEnumIterator;
 use serde::{Serialize, Deserialize};
@@ -19,28 +18,28 @@ use serde::{Serialize, Deserialize};
 pub struct BoardBuilder {
 	/// Number of healthy individuals
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
-    healthy: usize,
+    pub healthy: usize,
     /// Number of infected1 individuals
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
-    infected1: usize,
+    pub infected1: usize,
     /// Number of infected2 individuals
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
-    infected2: usize,
+    pub infected2: usize,
     /// Number of infected3 individuals
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
-    infected3: usize,
+    pub infected3: usize,
     /// Number of sick individuals
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
-    sick: usize,
+    pub sick: usize,
     /// Number of inmune individuals
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
-    inmune: usize,
+    pub inmune: usize,
     /// Current state of the buildings in the game
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
-    buildings: Vec<(usize, usize)>,
+    pub buildings: Vec<(usize, usize)>,
     /// Spreding mode
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
-    spreding: Spreding,
+    pub spreding: Spreding,
 }
 
 impl BoardBuilder {

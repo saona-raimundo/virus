@@ -67,5 +67,15 @@ mod tests {
 		assert_eq!(i.interacts_with(&other), expected);
 	}
 
-	
+	#[test_case(Individual::Healthy, Individual::Infected1, true)]
+    #[test_case(Individual::Infected1, Individual::Infected2, true)]
+    #[test_case(Individual::Infected2, Individual::Infected3, true)]
+    #[test_case(Individual::Infected3, Individual::Sick, true)]
+    #[test_case(Individual::Sick, Individual::Inmune, true)]
+    #[test_case(Individual::Inmune, Individual::Healthy, false)]
+    fn order(i: Individual, other: Individual, expected: bool) {
+        assert_eq!(i < other, expected);
+    }
+
+    
 }

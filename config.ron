@@ -1,10 +1,17 @@
 (
-    healthy: 0,
-    infected1: 0,
-    infected2: 0,
-    infected3: 0,
-    sick: 0,
-    inmune: 0,
-    buildings: [],
-    spreding: OneNear,
+    board_builder: (
+        healthy: 100,
+        infected1: 0,
+        infected2: 0,
+        infected3: 0,
+        sick: 3,
+        inmune: 20,
+        buildings: [(5,4),(2,2)],
+        spreding: OneNear,
+    ),
+    report_plan: (
+        num_simulations: 100,
+        days: 10,
+        query: [Healthy],
+    ),
 )

@@ -9,6 +9,7 @@ pub use individual::Individual;
 pub use population::Population;
 pub use board::Board;
 pub use recording::Recording;
+pub use simulation::{Simulation, SimulationBuilder};
 
 /// Individuals that can be in different states of health.
 pub mod individual;
@@ -20,10 +21,12 @@ pub mod population;
 pub mod board;
 /// Resources used to keep track of the state of the game.
 pub mod recording;
+/// Simulation setup and results.
+pub mod simulation;
 
 /// All you should need to play the game. 
 pub mod prelude {
-	pub use crate::{Board, Individual, Population, board::BoardBuilder};
+	pub use crate::{Board, Individual, Population, board::BoardBuilder, Simulation, SimulationBuilder};
 }
 
 /// All errors in this crate.
