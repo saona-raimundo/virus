@@ -4,10 +4,9 @@
 
 - [x] List of counting tables
 - [x] average matrix
-- [ ] plots of process with error
-  - [ ] Also for vaccinated people for an array of inputs
+- [x] plots of process with error
 
-3 setups:
+- [x] 3 setups:
 
 - Open
 - Lock-down light: Concert halll (5, 4), restaurant (4, 3), Gym (4, 2)
@@ -22,12 +21,6 @@ Discover the rate of vaccination that yields good results?
 ### Challenge
 
 Possibly taking down some buildings
-
-## Simulation
-
-Report
-
-- 
 
 ## GUI
 
