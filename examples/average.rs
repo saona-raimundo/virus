@@ -1,28 +1,28 @@
-use std::fs::{OpenOptions};
+use csv::Writer;
+use std::fs::OpenOptions;
 use virus_alert::prelude::*;
 use ron::de::from_reader;
 
 const CONFIG_PATH: &str = "config.ron";
 
 fn main() -> anyhow::Result<()> {
-	// Read from configuration file
 	let simulations = initialize();
+
 
 	for i in 0..simulations.len() {
 		// Run each simulation
 		let simulation = simulations[i].clone();
 		let report = simulation.run();
-		// Write the results in a csv file
-		for counting_table in report.counting_tables() {
-			let file = OpenOptions::new().append(true).create(true).open(format!("raw_results_{}.csv", i))?;
-			let mut writer = counting_table.write_on(file)?;
-			writer.flush()?;
-		}
+		let average = report.average_counting_table().map(|v| format!("{:.0} +- {:.2}", v.mean(), v.error()));
+		// Write on a csv file
+		let file = OpenOptions::new().append(true).create(true).open(format!("average_{}.csv", i))?;
+		let mut writer = Writer::from_writer(file);
+		for row in average.genrows() {
+			writer.write_record(row)?;
+		}		
+		writer.flush()?;
 	}
-
-	
 	Ok(())
-		
 }
 
 fn initialize() -> Vec<Simulation> {

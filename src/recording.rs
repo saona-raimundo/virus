@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::{Building, Individual, Population};
 use getset::{Getters, MutGetters};
 use strum::IntoEnumIterator;
+use ndarray::Array2;
 
 /// Represents the state of the game and have high level commands.
 #[derive(Debug, Clone, PartialEq, Eq, Getters, MutGetters)]
@@ -12,7 +13,7 @@ pub struct Recording {
 	/// The quantity of each individual type present in the population is counted and 
 	/// the vector of numbers represents the count for each of the days that have passed.
     #[getset(get = "pub", get_mut = "pub")]
-    counting_table: HashMap<Individual, Vec<usize>>,
+    counting_table: CountingTable,
 	/// Returns a "table" with the following information per day: Total infected, total sick and total healthy.  
 	///
 	/// The information provided in this table is the total number of 
@@ -75,22 +76,22 @@ impl Recording {
 	 	let last_values = self.last_counting_table();
 
 		let counting_table = self.counting_table_mut();
-	 	counting_table.entry(Individual::Healthy).and_modify(|v| v.push(last_values[0] - newly_infected));
-	 	counting_table.entry(Individual::Infected1).and_modify(|v| v.push(newly_infected));
-	 	counting_table.entry(Individual::Infected2).and_modify(|v| v.push(last_values[1]));
-	 	counting_table.entry(Individual::Infected3).and_modify(|v| v.push(last_values[2]));
-	 	counting_table.entry(Individual::Sick).and_modify(|v| v.push(last_values[3] + last_values[4]));
-	 	counting_table.entry(Individual::Inmune).and_modify(|v| v.push(last_values[5]));
+	 	counting_table.inner_mut().entry(Individual::Healthy).and_modify(|v| v.push(last_values[0] - newly_infected));
+	 	counting_table.inner_mut().entry(Individual::Infected1).and_modify(|v| v.push(newly_infected));
+	 	counting_table.inner_mut().entry(Individual::Infected2).and_modify(|v| v.push(last_values[1]));
+	 	counting_table.inner_mut().entry(Individual::Infected3).and_modify(|v| v.push(last_values[2]));
+	 	counting_table.inner_mut().entry(Individual::Sick).and_modify(|v| v.push(last_values[3] + last_values[4]));
+	 	counting_table.inner_mut().entry(Individual::Inmune).and_modify(|v| v.push(last_values[5]));
 	}
 
 	fn last_counting_table(&self) -> Vec<usize> {
 	 	[
-	 		self.counting_table()[&Individual::Healthy].last(),
-	 		self.counting_table()[&Individual::Infected1].last(),
-	 		self.counting_table()[&Individual::Infected2].last(),
-	 		self.counting_table()[&Individual::Infected3].last(),
-	 		self.counting_table()[&Individual::Sick].last(),
-	 		self.counting_table()[&Individual::Inmune].last(),
+	 		self.counting_table().inner()[&Individual::Healthy].last(),
+	 		self.counting_table().inner()[&Individual::Infected1].last(),
+	 		self.counting_table().inner()[&Individual::Infected2].last(),
+	 		self.counting_table().inner()[&Individual::Infected3].last(),
+	 		self.counting_table().inner()[&Individual::Sick].last(),
+	 		self.counting_table().inner()[&Individual::Inmune].last(),
 	 	].iter().map(|x| x.unwrap().clone()).collect()
 	}
 
@@ -119,9 +120,93 @@ impl Default for Recording {
 	}
 }
 
+/// Represents the state of the game and have high level commands.
+#[derive(Debug, Clone, PartialEq, Eq, Getters, MutGetters)]
+pub struct CountingTable {
+	/// Returns a "table" with the counting of individual types per day.
+	///
+	/// The quantity of each individual type present in the population is counted and 
+	/// the vector of numbers represents the count for each of the days that have passed.
+    #[getset(get = "pub", get_mut = "pub")]
+    inner: HashMap<Individual, Vec<usize>>,
+}
+
+impl CountingTable {
+
+	/// Returns the number of days counted.
+	pub fn days(&self) -> usize {
+		self.inner().get(&Individual::Healthy).expect("Tried to write an empty counting table!").len()
+	}
+	/// Writes the contents of the counting table on the writer.
+	///
+	/// # Remarks
+	///
+	/// Recall that a writer needs to be flushed to show in the output stream.
+	pub fn write_on<W: std::io::Write>(&self, writer: W) -> csv::Result<csv::Writer<W>> {
+		let days = self.days();
+
+		let mut writer = csv::Writer::from_writer(writer);
+
+		writer.write_field("Individual\\Day")?;
+		for day in 0..days {
+			writer.write_field(day.to_string())?;
+		}
+		writer.write_record(None::<&[u8]>)?;
+
+		for i in Individual::iter() {
+			writer.write_field(i.to_string())?;
+			for day in 0..days {
+				writer.write_field(self.inner()[&i][day].to_string())?;
+			}
+			writer.write_record(None::<&[u8]>)?;
+		}
+	    Ok(writer)
+	}
+}
+
+impl<T> From<T> for CountingTable 
+where
+	T: IntoIterator<Item = (Individual, Vec<usize>)>,
+{
+	fn from(iter: T) -> Self {
+		CountingTable{ inner: iter.into_iter().collect() }
+	}
+}
+
+impl core::iter::FromIterator<(Individual, Vec<usize>)> for CountingTable {
+	fn from_iter<T>(iter: T) -> Self 
+	where 
+		T: std::iter::IntoIterator<Item = (Individual, Vec<usize>)>, 
+	{
+		CountingTable{ inner: iter.into_iter().collect() }
+	}
+}
+
+
+impl From<&CountingTable> for Array2<usize> {
+	fn from(counting_table: &CountingTable) -> Array2<usize> {
+		let mut array = Array2::from_elem((6, counting_table.days()), 0);
+		let individual_variants: Vec<Individual> = Individual::iter().collect();
+		for counter in 0..individual_variants.len() {
+			for day in 0..counting_table.days() {
+				array[[counter, day]] = counting_table.inner()[&individual_variants[counter]][day];
+			}
+		}
+		array
+	}
+}
+
+impl From<&CountingTable> for Vec<(String, Vec<usize>)> {
+	fn from(counting_table: &CountingTable) -> Vec<(String, Vec<usize>)> {
+		Individual::iter().map(|i| (i.to_string(), counting_table.inner()[&i].clone())).collect()
+	}
+}
+
+
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use ndarray::array;
 
 	#[test]
 	fn register_counting_table1() {
@@ -143,5 +228,22 @@ mod tests {
 
 		assert_eq!(recording.last_counting_table(), vec![1, 0, 0, 0, 0, 0]);
 		recording.register_counting_table(2);
+	}
+
+	#[test]
+	fn write_on() -> csv::Result<()> {
+		let writer = vec![];
+		let counting_table: CountingTable = Individual::iter().map(|i| (i, vec![0])).collect();
+		let writer = counting_table.write_on(writer)?;
+		let data = String::from_utf8(writer.into_inner().unwrap()).unwrap();
+		assert_eq!(data, String::from("Individual\\Day,0\nHealthy,0\nInfected1,0\nInfected2,0\nInfected3,0\nSick,0\nInmune,0\n"));
+		Ok(())
+	}
+
+	#[test]
+	fn array2() {
+		let counting_table: CountingTable = Individual::iter().map(|i| (i, vec![0])).collect();
+		let expected = array![[0], [0], [0], [0], [0], [0]];
+		assert_eq!(Array2::from(&counting_table), expected);
 	}
 }

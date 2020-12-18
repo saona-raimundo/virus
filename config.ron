@@ -1,17 +1,51 @@
-(
-    board_builder: (
-        healthy: 100,
-        infected1: 0,
-        infected2: 0,
-        infected3: 0,
-        sick: 3,
-        inmune: 20,
-        buildings: [(5,4),(2,2)],
-        spreding: OneNear,
-    ),
-    report_plan: (
-        num_simulations: 100,
-        days: 10,
-        query: [Healthy],
-    ),
-)
+[
+	(
+	    board_builder: (
+	        healthy: 38,
+	        infected1: 2,
+	        infected2: 0,
+	        infected3: 0,
+	        sick: 0,
+	        inmune: 60,
+	        buildings: [(5,4),(2,2),(4,4),(2,2),(4,3),(4,2),(2,2),(4,2)],
+	        spreding: OneNear, // Everyone, One or OneNear
+	    ),
+	    report_plan: (
+	        num_simulations: 10,
+	        days: 10,
+	    ),
+	),
+	(
+	    board_builder: (
+	        healthy: 38,
+	        infected1: 2,
+	        infected2: 0,
+	        infected3: 0,
+	        sick: 0,
+	        inmune: 60,
+	        buildings: [(2,2),(4,4),(2,2),(2,2),(4,2)],
+	        spreding: OneNear, // Everyone, One or OneNear
+	    ),
+	    report_plan: (
+	        num_simulations: 10,
+	        days: 10,
+	    ),
+	),
+	(
+	    board_builder: (
+	        healthy: 38,
+	        infected1: 2,
+	        infected2: 0,
+	        infected3: 0,
+	        sick: 0,
+	        inmune: 60,
+	        buildings: [(2,2),(2,2),(2,2)],
+	        spreding: OneNear, // Everyone, One or OneNear
+	    ),
+	    report_plan: (
+	        num_simulations: 10,
+	        days: 10,
+	    ),
+	),
+
+]

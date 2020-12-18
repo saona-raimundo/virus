@@ -1,7 +1,7 @@
+use crate::recording::CountingTable;
 use core::fmt::Display;
 use crate::{BuildingBuilder, Building, Population, Individual, Recording, building::Spreding};
 use getset::{Getters, Setters, MutGetters};
-use strum::IntoEnumIterator;
 use serde::{Serialize, Deserialize};
 
 /// Builder for the `Board`.
@@ -68,7 +68,7 @@ impl BoardBuilder {
 
 
 /// Represents the state of the game and have high level commands.
-#[derive(Debug, Clone, PartialEq, Eq, Getters)]
+#[derive(Debug, Clone, PartialEq, Eq, Getters, MutGetters)]
 pub struct Board {
 	/// Current population in the game
     #[getset(get = "pub")]
@@ -78,7 +78,7 @@ pub struct Board {
     buildings: Vec<Building>,
     inactive: Vec<Individual>, 
     /// Recording device
-    #[getset(get = "pub")]
+    #[getset(get = "pub", get_mut)]
     recording: Recording,
 }
 
@@ -216,8 +216,8 @@ impl Board {
 	}
 
 	/// Returns the current state of the counting table
-	pub fn counting_table(&self) -> Vec<(String, &Vec<usize>)> {
-		Individual::iter().map(|i| (i.to_string(), &self.recording().counting_table()[&i])).collect()
+	pub fn counting_table(&self) -> &CountingTable {
+		self.recording().counting_table()
 	}
 }
 
@@ -239,7 +239,7 @@ impl Default for Board {
 		let bakery = BuildingBuilder::new("Bakery").with_size(2, 2).build();
 		let school = BuildingBuilder::new("School").with_size(4, 4).build();
 		let pharmacy = BuildingBuilder::new("Pharmacy").with_size(2, 2).build();
-		let restaurant = BuildingBuilder::new("Restaurant").with_size(3, 2).build();
+		let restaurant = BuildingBuilder::new("Restaurant").with_size(4, 3).build();
 		let gym = BuildingBuilder::new("Gym").with_size(4, 2).build();
 		let supermarket = BuildingBuilder::new("Supermarket").with_size(2, 2).build();
 		let shopping_center = BuildingBuilder::new("Shopping Center").with_size(4, 2).build();

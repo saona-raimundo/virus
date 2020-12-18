@@ -1,27 +1,26 @@
-use std::fs::{OpenOptions};
 use virus_alert::prelude::*;
 use ron::de::from_reader;
+use preexplorer::prelude::*;
 
 const CONFIG_PATH: &str = "config.ron";
 
-fn main() -> anyhow::Result<()> {
-	// Read from configuration file
+fn main() {
 	let simulations = initialize();
 
+	let mut comparison = Vec::new();
 	for i in 0..simulations.len() {
-		// Run each simulation
 		let simulation = simulations[i].clone();
 		let report = simulation.run();
-		// Write the results in a csv file
-		for counting_table in report.counting_tables() {
-			let file = OpenOptions::new().append(true).create(true).open(format!("raw_results_{}.csv", i))?;
-			let mut writer = counting_table.write_on(file)?;
-			writer.flush()?;
-		}
+		let healthy: Vec<Vec<f64>> = report.healthy_transpose().iter().map(|v| v.iter().map(|&x| x as f64).collect()).collect();
+		let values = pre::SequenceError::new(healthy)
+        	.set_title(format!("config {}", i))
+        	.to_owned();
+        comparison.push(values);
 	}
-
-	
-	Ok(())
+	pre::SequenceErrors::new(comparison)
+		.set_title("Evolution of healthy people under different configurations")
+		.plot("ploting simulation")
+		.unwrap();
 		
 }
 
