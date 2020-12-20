@@ -5,6 +5,7 @@ use crate::Individual;
 use gamma::graph::DefaultGraph;
 use ndarray::Array2;
 use serde::{Serialize, Deserialize};
+use getset::{Getters, Setters, MutGetters};
 
 /// Spreding mode inside a building.
 #[derive(Debug, Hash, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -15,10 +16,16 @@ pub enum Spreding {
     One,
     /// Infected individuals try to infect someone near to them considering spatial structure
     ///
-    /// Close individuals are does that are in distance one verticaly, horizontaly or diagonaly. 
+    /// Near individuals are does that are in distance one verticaly, horizontaly or diagonaly. 
     /// Also, as there can be more than one infected per building, they work collectively and infect
     /// as much people as possible, under the restriction that each of them infects only one other individual.
     OneNear,
+    /// Infected individuals try to infect someone very near to them considering spatial structure.
+    ///
+    /// Very near individuals are does that are in distance one verticaly or horizontaly. 
+    /// Also, as there can be more than one infected per building, they work collectively and infect
+    /// as much people as possible, under the restriction that each of them infects only one other individual.
+    OneVeryNear,
 }
 
 impl Default for Spreding {
@@ -105,7 +112,7 @@ impl Default for BuildingBuilder {
 }
 
 /// Building in the board game where spreading can happen.
-#[derive(Debug, Hash, Clone, PartialEq, Eq)]
+#[derive(Debug, Hash, Clone, PartialEq, Eq, Getters, MutGetters, Setters)]
 pub struct Building {
     people: Array2<Option<Individual>>,
     spreding: Spreding,
@@ -251,13 +258,13 @@ impl Building {
     	match self.spreding {
     		Spreding::Everyone => self.propagate_everyone(),
     		Spreding::One => self.propagate_one(),
-    		Spreding::OneNear => self.propagate_onenear()
+    		Spreding::OneNear => self.propagate_onenear(),
+    		Spreding::OneVeryNear => self.propagate_oneverynear(),
     	}
-        self
     }
 
     /// Propagates by infecting one healthy individual per infected indiviual, if possible
-    fn propagate_one(&mut self) {
+    fn propagate_one(&mut self) -> &mut Self{
     	let mut counter = 0;
     	for i in self.people.iter() {
     		if let Some(i) = i {
@@ -285,10 +292,11 @@ impl Building {
                 None => None,
 			}
 		});
+		self
     }
 
     /// Propagates by setting all healthy individuals to infected, if there is any infected in the building
-    fn propagate_everyone(&mut self) {
+    fn propagate_everyone(&mut self) -> &mut Self {
     	let mut infect_everyone = false;
     	for i in self.people.iter() {
     		if let Some(i) = i {
@@ -316,15 +324,30 @@ impl Building {
                 None => None,
 			}
 		});
+		self
     }
 
     /// Propagates by choosing a maximum matching between infected and healthy individuals
-    fn propagate_onenear(&mut self) {
+    fn propagate_onenear(&mut self) -> &mut Self {
         let graph: DefaultGraph = self.clone().into();
         let mut pairing = gamma::matching::Pairing::new();
 
         gamma::matching::maximum_matching(&graph, &mut pairing);
 
+        self.propagate_from_pairing(pairing)
+    }
+
+    /// Propagates by choosing a maximum matching between infected and healthy individuals
+    fn propagate_oneverynear(&mut self) -> &mut Self {
+        let graph: DefaultGraph = self.clone().into();
+        let mut pairing = gamma::matching::Pairing::new();
+
+        gamma::matching::maximum_matching(&graph, &mut pairing);
+
+        self.propagate_from_pairing(pairing)
+    }
+
+    fn propagate_from_pairing(&mut self, pairing: gamma::matching::Pairing) -> &mut Self {
         let rows = self.people().nrows();
         let columns = self.people().ncols();
         for col in 0..columns {
@@ -347,6 +370,7 @@ impl Building {
                 }
             }
         }
+        self
     }
 
     pub fn unchecked_from<T>(array: Array2<T>) -> Self 
@@ -400,51 +424,60 @@ impl Into<DefaultGraph> for Building {
             }
         }
         // Add edges
-        for col in 0..columns {
-            for row in 0..rows {
-                if let Some(i) = self.people()[[row, col]] {
-                	// Horizontal
-                    if col > 0 {
-                        if let Some(j) = self.people()[[row, col - 1]] {
-                            if i.interacts_with(&j) {
-                                graph
-                                    .add_edge(col + row * columns, (col - 1) + row * columns)
-                                    .unwrap()
-                            }
-                        }
-                    }
-                    // Vertical
-                    if row > 0 {
-                        if let Some(j) = self.people()[[row - 1, col]] {
-                            if i.interacts_with(&j) {
-                                graph
-                                    .add_edge(col + row * columns, col + (row - 1) * columns)
-                                    .unwrap()
-                            }
-                        }
-                    }
-                    // Diagonal
-                    if col > 0 && row > 0 {
-                    	if let Some(j) = self.people()[[row - 1, col - 1]] {
-                            if i.interacts_with(&j) {
-                                graph
-                                    .add_edge(col + row * columns, (col - 1) + (row - 1) * columns)
-                                    .unwrap()
-                            }
-                        }
-                    }
-                    if col > 0 && row < rows - 1 {
-                    	if let Some(j) = self.people()[[row + 1, col - 1]] {
-                            if i.interacts_with(&j) {
-                                graph
-                                    .add_edge(col + row * columns, (col - 1) + (row + 1) * columns)
-                                    .unwrap()
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        match self.spreding() {
+         	Spreding::OneNear | Spreding::OneVeryNear => {
+                for col in 0..columns {
+		            for row in 0..rows {
+		                if let Some(i) = self.people()[[row, col]] {
+		                	// Horizontal
+		                    if col > 0 {
+		                        if let Some(j) = self.people()[[row, col - 1]] {
+		                            if i.interacts_with(&j) {
+		                                graph
+		                                    .add_edge(col + row * columns, (col - 1) + row * columns)
+		                                    .unwrap()
+		                            }
+		                        }
+		                    }
+		                    // Vertical
+		                    if row > 0 {
+		                        if let Some(j) = self.people()[[row - 1, col]] {
+		                            if i.interacts_with(&j) {
+		                                graph
+		                                    .add_edge(col + row * columns, col + (row - 1) * columns)
+		                                    .unwrap()
+		                            }
+		                        }
+		                    }
+		                    // Diagonals
+		                    if self.spreding() == &Spreding::OneNear {
+    		                    if col > 0 && row > 0 {
+			                    	if let Some(j) = self.people()[[row - 1, col - 1]] {
+			                            if i.interacts_with(&j) {
+			                                graph
+			                                    .add_edge(col + row * columns, (col - 1) + (row - 1) * columns)
+			                                    .unwrap()
+			                            }
+			                        }
+			                    }
+			                    if col > 0 && row < rows - 1 {
+			                    	if let Some(j) = self.people()[[row + 1, col - 1]] {
+			                            if i.interacts_with(&j) {
+			                                graph
+			                                    .add_edge(col + row * columns, (col - 1) + (row + 1) * columns)
+			                                    .unwrap()
+			                            }
+			                        }
+			                    }
+		                    }
+	
+		                }
+		            }
+		        }
+         	},
+         	_ => todo!(),
+         } 
+		
         graph
     }
 }
@@ -452,7 +485,7 @@ impl Into<DefaultGraph> for Building {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	// use test_case::test_case;
+	use test_case::test_case;
 	use ndarray::array;
 
 	#[test]
@@ -463,6 +496,13 @@ mod tests {
 		assert_eq!(building.capacity(), 4);
 		assert!(building.is_full());
 		assert_eq!(building.spreding(), &Spreding::OneNear);
+	}
+
+	#[test]
+	#[should_panic]
+	fn no_sick_inside() {
+		let array = array![[Individual::Sick]];
+		Building::try_from(array).expect("There is a sick one!");
 	}
 
 	#[test]
@@ -506,242 +546,185 @@ mod tests {
 		assert_eq!(building.people(), &array![[Some(Individual::Healthy), None]]);
 	}
 
-	#[test]
-	fn propagate_everyone1() {
-		let mut initial = Building::try_from(array![
+	#[test_case(array![
 			[Individual::Healthy, Individual::Infected1],
 			[Individual::Healthy, Individual::Infected1] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::try_from(array![
+		], array![
 			[Individual::Infected1, Individual::Infected2],
 			[Individual::Infected1, Individual::Infected2] 
-		]).expect("There is a sick one!");
-		initial.set_spreding(Spreding::Everyone);
-		initial.propagate();
-		expected.set_spreding(Spreding::Everyone);
-		assert_eq!(initial, expected);
-	}
-
-	#[test]
-	fn propagate_everyone2() {
-		let mut initial = Building::try_from(array![
+		]; "double infection")]
+	#[test_case(array![
 			[Individual::Healthy, Individual::Infected1],
 			[Individual::Healthy, Individual::Healthy] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::try_from(array![
+		], array![
 			[Individual::Infected1, Individual::Infected2],
 			[Individual::Infected1, Individual::Infected1] 
-		]).expect("There is a sick one!");
-		initial.set_spreding(Spreding::Everyone);
-		initial.propagate();
-		expected.set_spreding(Spreding::Everyone);
-		assert_eq!(initial, expected);
-	}
-
-	#[test]
-	fn propagate_everyone3() {
-		let mut initial = Building::try_from(array![
+		]; "three options")]
+	#[test_case(array![
 			[Individual::Inmune, Individual::Infected3],
 			[Individual::Healthy, Individual::Healthy] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::unchecked_from(array![
+		], array![
 			[Individual::Inmune, Individual::Sick],
 			[Individual::Infected1, Individual::Infected1] 
-    	]);
-		initial.set_spreding(Spreding::Everyone);
-		expected.set_spreding(Spreding::Everyone);
-        initial.propagate();
-		assert_eq!(initial, expected);
-	}
-
-	#[test]
-	fn propagate_everyone4() {
-		let mut initial = Building::try_from(array![
+		]; "two options")]
+	#[test_case(array![
 			[Individual::Inmune, Individual::Infected3],
 			[Individual::Healthy, Individual::Inmune] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::unchecked_from(array![
+		], array![
 			[Individual::Inmune, Individual::Sick],
 			[Individual::Infected1, Individual::Inmune] 
-		]);
-		initial.set_spreding(Spreding::Everyone);
-        expected.set_spreding(Spreding::Everyone);
-		initial.propagate();
-		assert_eq!(initial, expected);
-	}
-
-	#[test]
-	fn propagate_everyone5() {
-		let mut initial = Building::try_from(array![
+		]; "diagonal increasing")]
+	#[test_case(array![
 			[Individual::Healthy, Individual::Inmune],
 			[Individual::Inmune, Individual::Infected3] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::unchecked_from(array![
+		], array![
 			[Individual::Infected1, Individual::Inmune],
 			[Individual::Inmune, Individual::Sick] 
-		]);
-        initial.set_spreding(Spreding::Everyone);
-        expected.set_spreding(Spreding::Everyone);
+		]; "diagonal decreasing")]
+	fn propagate_everyone(initial: Array2<Individual>, expected: Array2<Individual>) {
+		let mut initial = Building::unchecked_from(initial);
+		let mut expected = Building::unchecked_from(expected);
+		initial.set_spreding(Spreding::Everyone);
+		expected.set_spreding(Spreding::Everyone);
 		initial.propagate();
 		assert_eq!(initial, expected);
 	}
 
-	#[test]
-	fn propagate_one1() {
-		let mut initial = Building::try_from(array![
+	#[test_case(array![
 			[Individual::Healthy, Individual::Infected1],
 			[Individual::Healthy, Individual::Infected1] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::try_from(array![
+		], array![
 			[Individual::Infected1, Individual::Infected2],
 			[Individual::Infected1, Individual::Infected2] 
-		]).expect("There is a sick one!");
+		]; "double infection")]
+	#[test_case(array![
+			[Individual::Healthy, Individual::Infected1],
+			[Individual::Healthy, Individual::Healthy] 
+		], array![
+			[Individual::Infected1, Individual::Infected2],
+			[Individual::Healthy, Individual::Healthy] 
+		]; "three options")]
+	#[test_case(array![
+			[Individual::Inmune, Individual::Infected3],
+			[Individual::Healthy, Individual::Healthy] 
+		], array![
+			[Individual::Inmune, Individual::Sick],
+			[Individual::Infected1, Individual::Healthy] 
+		]; "two options")]
+	#[test_case(array![
+			[Individual::Inmune, Individual::Infected3],
+			[Individual::Healthy, Individual::Inmune] 
+		], array![
+			[Individual::Inmune, Individual::Sick],
+			[Individual::Infected1, Individual::Inmune] 
+		]; "diagonal increasing")]
+	#[test_case(array![
+			[Individual::Healthy, Individual::Inmune],
+			[Individual::Inmune, Individual::Infected3] 
+		], array![
+			[Individual::Infected1, Individual::Inmune],
+			[Individual::Inmune, Individual::Sick] 
+		]; "diagonal decreasing")]
+	fn propagate_one(initial: Array2<Individual>, expected: Array2<Individual>) {
+		let mut initial = Building::unchecked_from(initial);
+		let mut expected = Building::unchecked_from(expected);
 		initial.set_spreding(Spreding::One);
 		expected.set_spreding(Spreding::One);
 		initial.propagate();
 		assert_eq!(initial, expected);
 	}
 
-	#[test]
-	fn propagate_one2() {
-		let mut initial = Building::try_from(array![
+	#[test_case(array![
+			[Individual::Healthy, Individual::Infected1],
+			[Individual::Healthy, Individual::Infected2] 
+		], array![
+			[Individual::Infected1, Individual::Infected2],
+			[Individual::Infected1, Individual::Infected3] 
+		]; "double infection")]
+	#[test_case(array![
 			[Individual::Healthy, Individual::Infected1],
 			[Individual::Healthy, Individual::Healthy] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::try_from(array![
+		], array![
 			[Individual::Infected1, Individual::Infected2],
 			[Individual::Healthy, Individual::Healthy] 
-		]).expect("There is a sick one!");
-		initial.set_spreding(Spreding::One);
-		expected.set_spreding(Spreding::One);
-		initial.propagate();
-		assert_eq!(initial, expected);
-	}
-
-	#[test]
-	fn propagate_one3() {
-		let mut initial = Building::try_from(array![
+		]; "three options")]
+	#[test_case(array![
 			[Individual::Inmune, Individual::Infected3],
 			[Individual::Healthy, Individual::Healthy] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::unchecked_from(array![
+		], array![
 			[Individual::Inmune, Individual::Sick],
 			[Individual::Infected1, Individual::Healthy] 
-		]);
-        initial.set_spreding(Spreding::One);
-        expected.set_spreding(Spreding::One);
-		initial.propagate();
-		assert_eq!(initial, expected);
-	}
-
-	#[test]
-	fn propagate_one4() {
-		let mut initial = Building::try_from(array![
+		]; "two options")]
+	#[test_case(array![
 			[Individual::Inmune, Individual::Infected3],
 			[Individual::Healthy, Individual::Inmune] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::unchecked_from(array![
+		], array![
 			[Individual::Inmune, Individual::Sick],
 			[Individual::Infected1, Individual::Inmune] 
-		]);
-        initial.set_spreding(Spreding::One);
-        expected.set_spreding(Spreding::One);
-		initial.propagate();
-		assert_eq!(initial, expected);
-	}
-
-	#[test]
-	fn propagate_one5() {
-		let mut initial = Building::try_from(array![
+		]; "diagonal increasing")]
+	#[test_case(array![
 			[Individual::Healthy, Individual::Inmune],
 			[Individual::Inmune, Individual::Infected3] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::unchecked_from(array![
+		], array![
 			[Individual::Infected1, Individual::Inmune],
 			[Individual::Inmune, Individual::Sick] 
-		]);
-        initial.set_spreding(Spreding::One);
-        expected.set_spreding(Spreding::One);
+		]; "diagonal decreasing")]
+	#[test_case(array![
+			[Individual::Healthy, Individual::Healthy],
+			[Individual::Healthy, Individual::Sick] 
+		], array![
+			[Individual::Healthy, Individual::Healthy],
+			[Individual::Healthy, Individual::Sick] 
+		] => panics "There should not have been a sick person in the building"; "tried to spread from sick")]
+	fn propagate_onenear(initial: Array2<Individual>, expected: Array2<Individual>) {
+		let mut initial = Building::unchecked_from(initial);
+		let mut expected = Building::unchecked_from(expected);
+		initial.set_spreding(Spreding::OneNear);
+		expected.set_spreding(Spreding::OneNear);
 		initial.propagate();
 		assert_eq!(initial, expected);
 	}
 
-	#[test]
-	fn propagate_onenear1() {
-		let mut initial = Building::try_from(array![
-			[Individual::Healthy, Individual::Infected1],
+	#[test_case(array![
+			[Individual::Healthy, Individual::Infected2],
 			[Individual::Healthy, Individual::Infected1] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::try_from(array![
-			[Individual::Infected1, Individual::Infected2],
+		], array![
+			[Individual::Infected1, Individual::Infected3],
 			[Individual::Infected1, Individual::Infected2] 
-		]).expect("There is a sick one!");
-		initial.set_spreding(Spreding::OneNear);
-		expected.set_spreding(Spreding::OneNear);
-		initial.propagate();
-		assert_eq!(initial, expected);
-	}
-
-	#[test]
-	fn propagate_onenear2() {
-		let mut initial = Building::try_from(array![
+		]; "double infection")]
+	#[test_case(array![
 			[Individual::Healthy, Individual::Infected1],
 			[Individual::Healthy, Individual::Healthy] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::try_from(array![
+		], array![
 			[Individual::Infected1, Individual::Infected2],
 			[Individual::Healthy, Individual::Healthy] 
-		]).expect("There is a sick one!");
-		initial.set_spreding(Spreding::OneNear);
-		expected.set_spreding(Spreding::OneNear);
-		initial.propagate();
-		assert_eq!(initial, expected);
-	}
-
-	#[test]
-	fn propagate_onenear3() {
-		let mut initial = Building::try_from(array![
+		]; "three options")]
+	#[test_case(array![
 			[Individual::Inmune, Individual::Infected3],
 			[Individual::Healthy, Individual::Healthy] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::unchecked_from(array![
+		], array![
 			[Individual::Inmune, Individual::Sick],
-			[Individual::Infected1, Individual::Healthy] 
-		]);
-        initial.set_spreding(Spreding::OneNear);
-        expected.set_spreding(Spreding::OneNear);
-		initial.propagate();
-		assert_eq!(initial, expected);
-	}
-
-	#[test]
-	fn propagate_onenear4() {
-		let mut initial = Building::try_from(array![
+			[Individual::Healthy, Individual::Infected1] 
+		]; "two options")]
+	#[test_case(array![
 			[Individual::Inmune, Individual::Infected3],
 			[Individual::Healthy, Individual::Inmune] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::unchecked_from(array![
+		], array![
 			[Individual::Inmune, Individual::Sick],
-			[Individual::Infected1, Individual::Inmune] 
-		]);
-        initial.set_spreding(Spreding::OneNear);
-        expected.set_spreding(Spreding::OneNear);
-		initial.propagate();
-		assert_eq!(initial, expected);
-	}
-
-	#[test]
-	fn propagate_onenear5() {
-		let mut initial = Building::try_from(array![
+			[Individual::Healthy, Individual::Inmune] 
+		]; "diagonal increasing")]
+	#[test_case(array![
 			[Individual::Healthy, Individual::Inmune],
 			[Individual::Inmune, Individual::Infected3] 
-		]).expect("There is a sick one!");
-		let mut expected = Building::unchecked_from(array![
-			[Individual::Infected1, Individual::Inmune],
+		], array![
+			[Individual::Healthy, Individual::Inmune],
 			[Individual::Inmune, Individual::Sick] 
-		]);
-        initial.set_spreding(Spreding::OneNear);
-        expected.set_spreding(Spreding::OneNear);
+		]; "diagonal decreasing")]
+	fn propagate_oneverynear(initial: Array2<Individual>, expected: Array2<Individual>) {
+		let mut initial = Building::unchecked_from(initial);
+		let mut expected = Building::unchecked_from(expected);
+		initial.set_spreding(Spreding::OneVeryNear);
+		expected.set_spreding(Spreding::OneVeryNear);
 		initial.propagate();
 		assert_eq!(initial, expected);
 	}

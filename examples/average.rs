@@ -13,7 +13,7 @@ fn main() -> anyhow::Result<()> {
 		// Run each simulation
 		let simulation = simulations[i].clone();
 		let report = simulation.run();
-		let average = report.average_counting_table().map(|v| format!("{:.0} +- {:.2}", v.mean(), v.error()));
+		let average = report.average_counting_table().map(|v| format!("{:.2} +- {:.2}", v.mean(), v.error()));
 		// Write on a csv file
 		let file = OpenOptions::new().append(true).create(true).open(format!("average_{}.csv", i))?;
 		let mut writer = Writer::from_writer(file);
