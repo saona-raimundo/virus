@@ -26,7 +26,7 @@ pub mod simulation;
 
 /// All you should need to play the game. 
 pub mod prelude {
-	pub use crate::{Board, Individual, Population, board::BoardBuilder, Simulation, SimulationBuilder};
+	pub use crate::{simulation::Report, Board, Individual, Population, board::BoardBuilder, Simulation, SimulationBuilder};
 }
 
 /// All errors in this crate.
@@ -50,10 +50,5 @@ mod tests {
         // PCG32 will do fine, and will be easy to embed if we ever need to.
         const INC: u64 = 11634580027462260723;
         rand_pcg::Pcg32::new(seed, INC)
-    }
-
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
     }
 }

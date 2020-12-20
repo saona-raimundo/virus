@@ -7,19 +7,32 @@ const CONFIG_PATH: &str = "config.ron";
 fn main() {
 	let simulations = initialize();
 
-	let mut comparison = Vec::new();
+	let mut averages = Vec::new();
+	let mut histograms = Vec::new();
 	for i in 0..simulations.len() {
 		let simulation = simulations[i].clone();
 		let report = simulation.run();
 		let healthy: Vec<Vec<f64>> = report.healthy_transpose().iter().map(|v| v.iter().map(|&x| x as f64).collect()).collect();
-		let values = pre::SequenceError::new(healthy)
+		// Mean +- Error
+		let average = pre::SequenceError::new(healthy.clone())
         	.set_title(format!("config {}", i))
         	.to_owned();
-        comparison.push(values);
+        averages.push(average);
+        // Histogram
+        let histogram = pre::SequenceBin::new(healthy, 1)
+        	.set_title(format!("config {}", i))
+        	.to_owned();
+        histograms.push(histogram);
 	}
-	pre::SequenceErrors::new(comparison)
+
+	pre::SequenceErrors::new(averages)
 		.set_title("Evolution of healthy people under different configurations")
-		.plot("ploting simulation")
+		.plot("averages")
+		.unwrap();
+
+	pre::SequenceBins::new(histograms)
+		.set_title("Evolution of healthy people under different configurations")
+		.plot("histograms")
 		.unwrap();
 		
 }
