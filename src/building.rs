@@ -7,9 +7,9 @@ use ndarray::Array2;
 use serde::{Serialize, Deserialize};
 use getset::{Getters, Setters, MutGetters};
 
-/// Spreding mode inside a building.
+/// Spreading mode inside a building.
 #[derive(Debug, Hash, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub enum Spreding {
+pub enum Spreading {
     /// If there is one person infected in the building, then everyone is infected
     Everyone,
     /// Each infected person infects at least one healthy person, regardless of spatial structure
@@ -28,9 +28,9 @@ pub enum Spreding {
     OneVeryNear,
 }
 
-impl Default for Spreding {
+impl Default for Spreading {
     fn default() -> Self { 
-        Spreding::OneNear
+        Spreading::OneNear
     }
 }
 
@@ -39,7 +39,7 @@ impl Default for Spreding {
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub struct BuildingBuilder {
     people: Array2<Option<Individual>>,
-    spreding: Spreding,
+    spreading: Spreading,
     name: String,
     penalty: usize,
     open: bool, 
@@ -68,9 +68,9 @@ impl BuildingBuilder {
         self
     }
 
-    /// Changes the spreding mode of the building
-    pub fn with_spreding(mut self, new_spreding: Spreding) -> Self {
-        self.spreding = new_spreding;
+    /// Changes the spreading mode of the building
+    pub fn with_spreading(mut self, new_spreading: Spreading) -> Self {
+        self.spreading = new_spreading;
         self
     }
 
@@ -91,7 +91,7 @@ impl BuildingBuilder {
     pub fn build(self) -> Building {
         Building {
             people: self.people,
-            spreding: self.spreding,
+            spreading: self.spreading,
             name: self.name,
             penalty: self.penalty,
             open: self.open,
@@ -103,7 +103,7 @@ impl Default for BuildingBuilder {
     fn default() -> Self { 
         BuildingBuilder{
             people: Array2::from_elem((0, 0), None),
-            spreding: Spreding::OneNear,
+            spreading: Spreading::OneNear,
             name: String::from("Default"),
             penalty: 0,
             open: true,
@@ -115,7 +115,7 @@ impl Default for BuildingBuilder {
 #[derive(Debug, Hash, Clone, PartialEq, Eq, Getters, MutGetters, Setters)]
 pub struct Building {
     people: Array2<Option<Individual>>,
-    spreding: Spreding,
+    spreading: Spreading,
     name: String,
     penalty: usize,
     open: bool,
@@ -124,7 +124,7 @@ pub struct Building {
 impl Building {
 	/// Creates a new and empty building
 	///
-	/// The default mode of propagation is `OneNear`, see `spreding` method for more.
+	/// The default mode of propagation is `OneNear`, see `spreading` method for more.
 	pub fn new<S: Display>(columns: usize, rows: usize, name: S) -> Self {
         let default = Building::default();
 		Building{ 
@@ -195,13 +195,13 @@ impl Building {
 	pub fn people(&self) -> &Array2<Option<Individual>> {
 		&self.people
 	}
-	/// Returns the spreding mode of the building
-	pub fn spreding(&self) -> &Spreding {
-		&self.spreding
+	/// Returns the spreading mode of the building
+	pub fn spreading(&self) -> &Spreading {
+		&self.spreading
 	}
-	/// Sets the spreding mode of the building
-	pub fn set_spreding(&mut self, new_spreding: Spreding) -> &mut Self {
-		self.spreding = new_spreding;
+	/// Sets the spreading mode of the building
+	pub fn set_spreading(&mut self, new_spreading: Spreading) -> &mut Self {
+		self.spreading = new_spreading;
         self
 	}
     /// Return the shape of the array as a slice.
@@ -255,11 +255,11 @@ impl Building {
 
     /// Propagates the infection
     pub fn propagate(&mut self) -> &mut Self {
-    	match self.spreding {
-    		Spreding::Everyone => self.propagate_everyone(),
-    		Spreding::One => self.propagate_one(),
-    		Spreding::OneNear => self.propagate_onenear(),
-    		Spreding::OneVeryNear => self.propagate_oneverynear(),
+    	match self.spreading {
+    		Spreading::Everyone => self.propagate_everyone(),
+    		Spreading::One => self.propagate_one(),
+    		Spreading::OneNear => self.propagate_onenear(),
+    		Spreading::OneVeryNear => self.propagate_oneverynear(),
     	}
     }
 
@@ -424,8 +424,8 @@ impl Into<DefaultGraph> for Building {
             }
         }
         // Add edges
-        match self.spreding() {
-         	Spreding::OneNear | Spreding::OneVeryNear => {
+        match self.spreading() {
+         	Spreading::OneNear | Spreading::OneVeryNear => {
                 for col in 0..columns {
 		            for row in 0..rows {
 		                if let Some(i) = self.people()[[row, col]] {
@@ -450,7 +450,7 @@ impl Into<DefaultGraph> for Building {
 		                        }
 		                    }
 		                    // Diagonals
-		                    if self.spreding() == &Spreding::OneNear {
+		                    if self.spreading() == &Spreading::OneNear {
     		                    if col > 0 && row > 0 {
 			                    	if let Some(j) = self.people()[[row - 1, col - 1]] {
 			                            if i.interacts_with(&j) {
@@ -495,7 +495,7 @@ mod tests {
 		assert_eq!(building.people(), &array.map(|&i| Some(i)));
 		assert_eq!(building.capacity(), 4);
 		assert!(building.is_full());
-		assert_eq!(building.spreding(), &Spreding::OneNear);
+		assert_eq!(building.spreading(), &Spreading::OneNear);
 	}
 
 	#[test]
@@ -584,8 +584,8 @@ mod tests {
 	fn propagate_everyone(initial: Array2<Individual>, expected: Array2<Individual>) {
 		let mut initial = Building::unchecked_from(initial);
 		let mut expected = Building::unchecked_from(expected);
-		initial.set_spreding(Spreding::Everyone);
-		expected.set_spreding(Spreding::Everyone);
+		initial.set_spreading(Spreading::Everyone);
+		expected.set_spreading(Spreading::Everyone);
 		initial.propagate();
 		assert_eq!(initial, expected);
 	}
@@ -628,8 +628,8 @@ mod tests {
 	fn propagate_one(initial: Array2<Individual>, expected: Array2<Individual>) {
 		let mut initial = Building::unchecked_from(initial);
 		let mut expected = Building::unchecked_from(expected);
-		initial.set_spreding(Spreding::One);
-		expected.set_spreding(Spreding::One);
+		initial.set_spreading(Spreading::One);
+		expected.set_spreading(Spreading::One);
 		initial.propagate();
 		assert_eq!(initial, expected);
 	}
@@ -679,8 +679,8 @@ mod tests {
 	fn propagate_onenear(initial: Array2<Individual>, expected: Array2<Individual>) {
 		let mut initial = Building::unchecked_from(initial);
 		let mut expected = Building::unchecked_from(expected);
-		initial.set_spreding(Spreding::OneNear);
-		expected.set_spreding(Spreding::OneNear);
+		initial.set_spreading(Spreading::OneNear);
+		expected.set_spreading(Spreading::OneNear);
 		initial.propagate();
 		assert_eq!(initial, expected);
 	}
@@ -723,8 +723,8 @@ mod tests {
 	fn propagate_oneverynear(initial: Array2<Individual>, expected: Array2<Individual>) {
 		let mut initial = Building::unchecked_from(initial);
 		let mut expected = Building::unchecked_from(expected);
-		initial.set_spreding(Spreding::OneVeryNear);
-		expected.set_spreding(Spreding::OneVeryNear);
+		initial.set_spreading(Spreading::OneVeryNear);
+		expected.set_spreading(Spreading::OneVeryNear);
 		initial.propagate();
 		assert_eq!(initial, expected);
 	}

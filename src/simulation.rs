@@ -57,7 +57,7 @@ impl Simulation {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Individual, building::Spreding};
+    use crate::{Individual, building::Spreading};
 
     #[test]
     fn run() {
@@ -70,7 +70,7 @@ mod tests {
                     sick: 3,
                     inmune: 20,
                     buildings: vec![(0, 0)],
-                    spreding: Spreding::OneNear,
+                    spreading: Spreading::OneNear,
             },
             report_plan: ReportPlan{
                     num_simulations: 1,

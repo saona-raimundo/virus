@@ -1,6 +1,6 @@
 use crate::recording::CountingTable;
 use core::fmt::Display;
-use crate::{BuildingBuilder, Building, Population, Individual, Recording, building::Spreding};
+use crate::{BuildingBuilder, Building, Population, Individual, Recording, building::Spreading};
 use getset::{Getters, Setters, MutGetters};
 use serde::{Serialize, Deserialize};
 
@@ -8,7 +8,7 @@ use serde::{Serialize, Deserialize};
 ///
 /// # Remarks
 ///
-/// Although `Board` can be constructed from `new` and `set_spreding`, this 
+/// Although `Board` can be constructed from `new` and `set_spreading`, this 
 /// struct is specifically thought to be serialized and deserialized in a human-frindly way,
 /// specially useful as a configuration file.
 ///   
@@ -37,9 +37,9 @@ pub struct BoardBuilder {
     /// Current state of the buildings in the game
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
     pub buildings: Vec<(usize, usize)>,
-    /// Spreding mode
+    /// Spreading mode
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
-    pub spreding: Spreding,
+    pub spreading: Spreading,
 }
 
 impl BoardBuilder {
@@ -57,7 +57,7 @@ impl BoardBuilder {
 		let buildings = self.buildings.iter().map(|&(cols, rows)| 
 			BuildingBuilder::new("Defult")
 				.with_size(cols, rows)
-				.with_spreding(self.spreding)
+				.with_spreading(self.spreading)
 				.and_is_open()
 				.build()
 			).collect();
@@ -205,12 +205,12 @@ impl Board {
 		self
 	}
 
-	/// Changes the spreding mode. 
+	/// Changes the spreading mode. 
 	///
-	/// See `Spreding` for more. 
-	pub fn set_spreding(&mut self, new_spreding: Spreding) -> &mut Self {
+	/// See `Spreading` for more. 
+	pub fn set_spreading(&mut self, new_spreading: Spreading) -> &mut Self {
 		for building in self.buildings.iter_mut() {
-			building.set_spreding(new_spreding);
+			building.set_spreading(new_spreading);
 		}
 		self
 	}

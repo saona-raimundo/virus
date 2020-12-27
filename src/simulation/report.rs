@@ -106,7 +106,11 @@ impl Report {
     ///
     /// If the number of simulations is zero.
     pub fn healthy_initial(&self) -> usize {
-        self.healthy()[0][0]
+        if self.healthy().is_empty() {
+            panic!("There is no simulation to compute the number of initial healthy individuals!")
+        } else {
+            self.healthy()[0][0]
+        }
     }
 }
 
