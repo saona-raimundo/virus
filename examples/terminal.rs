@@ -1,5 +1,5 @@
 use virus_alert::simulation::ReportPlan;
-use virus_alert::building::Spreding;
+use virus_alert::building::Spreading;
 use virus_alert::prelude::*;
 
 
@@ -13,7 +13,7 @@ fn main() {
                 sick: 3,
                 inmune: 20,
                 buildings: vec![(0, 0)],
-                spreding: Spreding::OneNear,
+                spreading: Spreading::OneNear,
         },
         report_plan: ReportPlan{
                 num_simulations: 1,
