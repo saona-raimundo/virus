@@ -7,6 +7,8 @@ Virus alarm simulations.
 
 Check out our basic [simulation tool](a.html)!
 
+Or [here](b.md)!
+
 ## Feature
 
 - `wasm-bindgen`: Supports `wasm32-unknown-unknown` (needed for the `rand` crate).
