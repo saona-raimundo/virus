@@ -53,7 +53,7 @@ impl Input {
         buildings
     }
 
-    fn simulation(&self) -> Simulation {
+    fn simulation(&self, num_simulations: usize) -> Simulation {
         SimulationBuilder {
             board_builder: BoardBuilder {
                 healthy: 98 - self.inmune,
@@ -66,7 +66,7 @@ impl Input {
                 spreading: SPREADING,
             },
             report_plan: ReportPlan {
-                num_simulations: 1,
+                num_simulations,
                 days: 10,
             },
         }
@@ -77,7 +77,7 @@ impl Input {
         let _timer = debug::Timer::new("One simulation");
         // Computing
         let _timer_run = debug::Timer::new("Running one simulation");
-        let report = self.simulation().run();
+        let report = self.simulation(1).run();
         std::mem::drop(_timer_run);
         let diagram = report.counting_tables()[0].diagram();
         
@@ -108,48 +108,28 @@ impl Input {
     /// Optimized for minimmal memory usage
     fn message_many(&mut self) -> String {
         // Computing
-        let quantity = 100;
-        // let _timer_simulation = debug::Timer::new("Preparing one simulation");
-        let simulation = self.simulation();
-        // std::mem::drop(_timer_simulation);
-        let summary: Vec<f32> = (0..quantity)
-            .map(|_| {
-                // let _timer_run = debug::Timer::new("Running one simulation");
-                let report = simulation.run();
-                // std::mem::drop(_timer_run);
-                let counting_table = &report.counting_tables()[0];
-                
-                let healthy: usize = counting_table.inner()[&Individual::Healthy][10];
-                let sick: usize = counting_table.inner()[&Individual::Sick][10];
-                let contained: usize = if (healthy > 0) && (healthy + sick + self.inmune == 100)  {
-                    1
-                } else {
-                    0
-                };
-
-                [healthy, sick, contained]
-            })
-            .fold([0, 0, 0], |mut acc, x| {
-                for i in 0..3 {
-                    acc[i] += x[i];
-                }
-                acc
-            })
-            .iter()
-            .map(|x| *x as f32 / quantity as f32)
-            .collect();
+        let quantity = 50;
+        let simulation = self.simulation(quantity);
+        // Main computation
+        let _timer_run = debug::Timer::new("Running many simulations");
+        let report_last_day = simulation.run_last_day();
+        let normalization = *simulation.report_plan().num_simulations() as f32;
+        let healthy = report_last_day.healthy().iter().sum::<usize>() as f32 / normalization;
+        let sick = report_last_day.sick().iter().sum::<usize>() as f32 / normalization;
+        let contained = report_last_day.contained().iter().map(|b| if *b { 1 } else { 0 }).sum::<usize>() as f32 / normalization;
+        std::mem::drop(_timer_run);
 
         // Formating
         let mut out = String::new();
         out += "Mean after 10 days\n";
         out += "------------------\n";
-        out += &format!("{:<6.2}", summary[0]);
+        out += &format!("{:<6.2}", healthy);
         out += "healthy\n";
-        out += &format!("{:<6.2}", summary[1]);
+        out += &format!("{:<6.2}", sick);
         out += "sick\n";
-        out += &format!("{:<6}", format!("{:.0}%", 100. * summary[0] / (98 - self.inmune) as f32));
+        out += &format!("{:<6}", format!("{:.0}%", 100. * healthy / (98 - self.inmune) as f32));
         out += "unvaccinated people still healthy\n";
-        out += &format!("{:<6}", format!("{:.0}%", 100. * summary[2]));
+        out += &format!("{:<6}", format!("{:.0}%", 100. * contained));
         out += "contained outbreaks\n";
         debug!("Simulated {} times and obtained\n{}", quantity, out);
         out

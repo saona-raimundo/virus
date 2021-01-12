@@ -1,6 +1,6 @@
 
 use crate::recording::CountingTable;
-use crate::prelude::{Board, BoardBuilder};
+use crate::prelude::{Board, BoardBuilder, Individual};
 use getset::{Getters, Setters, MutGetters};
 use serde::{Serialize, Deserialize};
 
@@ -50,6 +50,42 @@ impl Simulation {
             counting_tables.push(board.counting_table().clone());
         }
         Report { counting_tables }
+    }
+
+    /// Returns the result of the last day of the simulation.
+    pub fn run_last_day(&self) -> ReportLastDay {
+        // Set-up
+        let mut healthy: Vec<usize> = Vec::new(); 
+        let mut sick: Vec<usize> = Vec::new(); 
+        let mut contained: Vec<bool> = Vec::new(); 
+
+        // Computation
+        for _ in 0..*self.report_plan.num_simulations() {
+            let mut healthy_sim = self.board().counting_table().inner()[&Individual::Healthy][0];
+            let mut infected1_sim = self.board().counting_table().inner()[&Individual::Infected1][0];
+            let mut infected2_sim = self.board().counting_table().inner()[&Individual::Infected2][0];
+            let mut infected3_sim = self.board().counting_table().inner()[&Individual::Infected3][0];
+            let mut sick_sim = self.board().counting_table().inner()[&Individual::Sick][0];
+            let mut board = self.board.clone();
+            for _ in 0..*self.report_plan.days() {
+                board.visit();
+                board.propagate();
+                let newly_infected = board.go_back();
+                healthy_sim -= newly_infected;
+                sick_sim += infected3_sim;
+                infected3_sim = infected2_sim;
+                infected2_sim = infected1_sim;
+                infected1_sim = newly_infected;
+            }
+            let infected_sim = infected1_sim + infected2_sim + infected3_sim;
+            let contained_sim: bool = (healthy_sim > 0) && (infected_sim == 0);
+
+            // Saving results
+            healthy.push(healthy_sim);
+            sick.push(sick_sim);
+            contained.push(contained_sim);
+        }
+        ReportLastDay { healthy, sick, contained }
     }
 }
 

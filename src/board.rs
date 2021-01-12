@@ -114,7 +114,8 @@ impl Board {
 	pub fn advance(&mut self) {
 		self.visit();
 		self.propagate();
-		self.go_back();
+		let newly_infected = self.go_back();
+		self.recording.register(newly_infected, &self.buildings);
 	}
 
 	/// First step of any stage
@@ -164,7 +165,8 @@ impl Board {
 
 	/// Third step of any stage
 	///
-	/// In this step, the population returns home, changes are recorded and the number of newly infected is returned.
+	/// In this step, the population returns home. 
+	/// Outputs the number of newly infected.
 	pub fn go_back(&mut self) -> usize {
 		let mut new_vec = Vec::new();
 		// Collect from buildings
@@ -178,7 +180,6 @@ impl Board {
 
 		// Update
 		self.population = new_population;
-		self.recording.register(newly_infected, &self.buildings);
 
 		newly_infected
 	}

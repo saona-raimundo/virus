@@ -27,3 +27,12 @@ rand_pcg = "0.2.1"
 ron = "0.6.2"
 preexplorer = "0.3.4"
 anyhow = "1.0.35"
+criterion = "0.3"
+
+[[bench]]
+name = "complete_or_last"
+harness = false
+
+[[bench]]
+name = "last_or_last_average"
+harness = false
