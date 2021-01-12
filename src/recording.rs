@@ -111,8 +111,8 @@ impl Default for Recording {
 ///
 /// This is how it looks. 
 /// ```
-/// # use virus_alert::prelude::*;
-/// # use virus_alert::recording::CountingTable;
+/// # use virus_alarm::prelude::*;
+/// # use virus_alarm::recording::CountingTable;
 /// let counting_table = CountingTable::from(vec![
 /// 	(Individual::Healthy, vec![98, 97]),
 /// 	(Individual::Infected1, vec![2, 1]),

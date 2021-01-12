@@ -1,6 +1,6 @@
 use csv::Writer;
 use std::fs::OpenOptions;
-use virus_alert::prelude::*;
+use virus_alarm::prelude::*;
 use ron::de::from_reader;
 
 const CONFIG_PATH: &str = "config.ron";

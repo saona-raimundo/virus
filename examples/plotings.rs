@@ -1,4 +1,4 @@
-use virus_alert::prelude::*;
+use virus_alarm::prelude::*;
 use ron::de::from_reader;
 use preexplorer::prelude::*;
 

@@ -1,6 +1,4 @@
-use virus_alert::simulation::ReportPlan;
-use virus_alert::building::Spreading;
-use virus_alert::prelude::*;
+use virus_alarm::prelude::*;
 
 
 fn main() {

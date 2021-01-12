@@ -228,7 +228,7 @@ impl Default for Board {
 	///
 	/// Some default values.
 	/// ```
-	/// # use virus_alert::prelude::*;
+	/// # use virus_alarm::prelude::*;
 	/// let board = Board::default();
 	/// assert_eq!(board.population().len(), 100);
 	/// assert_eq!(board.buildings().len(), 8);
