@@ -32,7 +32,3 @@ criterion = "0.3"
 [[bench]]
 name = "complete_or_last"
 harness = false
-
-[[bench]]
-name = "last_or_last_average"
-harness = false

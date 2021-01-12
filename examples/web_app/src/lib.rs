@@ -108,7 +108,7 @@ impl Input {
     /// Optimized for minimmal memory usage
     fn message_many(&mut self) -> String {
         // Computing
-        let quantity = 50;
+        let quantity = 101;
         let simulation = self.simulation(quantity);
         // Main computation
         let _timer_run = debug::Timer::new("Running many simulations");
