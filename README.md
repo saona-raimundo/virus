@@ -9,6 +9,8 @@ Check out our basic [simulation tool](a.html)!
 
 Or [here](b.md)!
 
+[simulation tool](examples\web_app\www\dist\index.html)
+
 ## Feature
 
 - `wasm-bindgen`: Supports `wasm32-unknown-unknown` (needed for the `rand` crate).
