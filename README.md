@@ -5,11 +5,7 @@ Virus alarm simulations.
 
 ## Web app
 
-Check out our basic [simulation tool](a.html)!
-
-Or [here](b.md)!
-
-[simulation tool2](examples/web_app/www/dist/index.html)
+Check out our basic [simulation tool](examples/web_app/www/dist/index.html)!
 
 ## Feature
 
