@@ -26,7 +26,17 @@ pub mod simulation;
 
 /// All you should need to play the game. 
 pub mod prelude {
-	pub use crate::{simulation::Report, Board, Individual, Population, board::BoardBuilder, Simulation, SimulationBuilder};
+	pub use crate::{
+        simulation::Report,
+        simulation::report::ReportPlan, 
+        Board, 
+        Individual, 
+        Population, 
+        board::BoardBuilder, 
+        Simulation, 
+        SimulationBuilder,
+        building::Spreading,
+    };
 }
 
 /// All errors in this crate.

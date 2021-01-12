@@ -1,4 +1,3 @@
-
 use std::collections::HashMap;
 use crate::{Building, Individual, Population};
 use getset::{Getters, MutGetters};
@@ -14,12 +13,6 @@ pub struct Recording {
 	/// the vector of numbers represents the count for each of the days that have passed.
     #[getset(get = "pub", get_mut = "pub")]
     counting_table: CountingTable,
-	/// Returns a "table" with the following information per day: Total infected, total sick and total healthy.  
-	///
-	/// The information provided in this table is the total number of 
-	/// infected, sick and healthy individuals respectively for each day that has been recorded.
-    #[getset(get = "pub", get_mut = "pub")]
-    diagram: [Vec<usize>; 3],
     /// Returns the current stage.  
     #[getset(get = "pub", get_mut = "pub")]
     timeline: usize, 
@@ -42,20 +35,22 @@ impl Recording {
 			recording.penalty.push((building, vec![0]));
 		}
 		recording.counting_table = population.counting_all().iter().map(|(&i, &val)| (i, vec![val])).collect();
-		recording.diagram = [
-			vec![population.counting(Individual::Infected1) + population.counting(Individual::Infected2) + population.counting(Individual::Infected3)],
-			vec![population.counting(Individual::Sick)],
-			vec![population.counting(Individual::Healthy)],
-		];
 
 		recording
 	}
-
 
 	/// Increments the count of statges by one
 	fn increment_time(&mut self) -> &mut Self {
 		self.timeline += 1;
 		self
+	}
+
+	/// Returns a "table" with the following information per day: Total healthy, total sick and total infected.  
+	///
+	/// The information provided in this table is the total number of 
+	/// infected, sick and healthy individuals respectively for each day that has been recorded.
+	pub fn diagram(&self) -> [Vec<usize>; 3] {
+		self.counting_table().diagram()
 	}
 
 	/// Main functions that registers newly infected individuals
@@ -64,7 +59,6 @@ impl Recording {
 	///
 	/// If the number of newly infected is larger than the number of healthy individuals available
 	pub fn register(&mut self, newly_infected: usize, _buildings: &Vec<Building>) -> &mut Self {
-		self.register_diagram(newly_infected);
 		self.register_counting_table(newly_infected);
 		// self.register_penalty(buildings);
 		// self.register_daily_score(buildings);
@@ -94,15 +88,6 @@ impl Recording {
 	 		self.counting_table().inner()[&Individual::Inmune].last(),
 	 	].iter().map(|x| x.unwrap().clone()).collect()
 	}
-
-	fn register_diagram(&mut self, newly_infected: usize) {
-	 	let last_counting_table = self.last_counting_table();
-
-		let diagram = self.diagram_mut();
-		diagram[0].push(newly_infected + last_counting_table[1] + last_counting_table[2]);
-		diagram[1].push(last_counting_table[3] + last_counting_table[4]);
-		diagram[2].push(last_counting_table[0] - newly_infected + last_counting_table[5]);
-	}
 }
 
 
@@ -111,16 +96,41 @@ impl Default for Recording {
 	// add code here
 	fn default() -> Self { 
 		let counting_table = Individual::iter().map(|i| (i, vec![0])).collect();
-		let diagram = [vec![0], vec![0], vec![0]];
+		// let diagram = [vec![0], vec![0], vec![0]];
 		let timeline = 0;
 		let penalty = Vec::new();
 		let daily_score = vec![0];
 
-		Recording { counting_table, diagram, timeline, penalty, daily_score }
+		Recording { counting_table, timeline, penalty, daily_score }
 	}
 }
 
 /// Represents the state of the game and have high level commands.
+///
+/// # Examples
+///
+/// This is how it looks. 
+/// ```
+/// # use virus_alert::prelude::*;
+/// # use virus_alert::recording::CountingTable;
+/// let counting_table = CountingTable::from(vec![
+/// 	(Individual::Healthy, vec![98, 97]),
+/// 	(Individual::Infected1, vec![2, 1]),
+/// 	(Individual::Infected2, vec![0, 2]),
+/// 	(Individual::Infected3, vec![0, 0]),
+/// 	(Individual::Sick, vec![0, 0]),
+/// 	(Individual::Inmune, vec![0, 0]),
+/// ]);
+/// assert_eq!(counting_table.to_string(), String::from("\
+/// 	Individual\\Day 0  1  \n\
+/// 	Healthy        98 97 \n\
+/// 	Infected1      2  1  \n\
+/// 	Infected2      0  2  \n\
+/// 	Infected3      0  0  \n\
+/// 	Sick           0  0  \n\
+/// 	Inmune         0  0  \n\
+/// "));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Getters, MutGetters)]
 pub struct CountingTable {
 	/// Returns a "table" with the counting of individual types per day.
@@ -143,24 +153,64 @@ impl CountingTable {
 	///
 	/// Recall that a writer needs to be flushed to show in the output stream.
 	pub fn write_on<W: std::io::Write>(&self, writer: W) -> csv::Result<csv::Writer<W>> {
-		let days = self.days();
-
 		let mut writer = csv::Writer::from_writer(writer);
-
-		writer.write_field("Individual\\Day")?;
-		for day in 0..days {
-			writer.write_field(day.to_string())?;
-		}
-		writer.write_record(None::<&[u8]>)?;
-
-		for i in Individual::iter() {
-			writer.write_field(i.to_string())?;
-			for day in 0..days {
-				writer.write_field(self.inner()[&i][day].to_string())?;
-			}
-			writer.write_record(None::<&[u8]>)?;
+		let table: Vec<Vec<String>> = self.clone().into();
+		for row in table {
+			writer.serialize(row)?;
 		}
 	    Ok(writer)
+	}
+
+	/// Returns a "table" with the following information per day: Total healthy, total sick and total infected.  
+	///
+	/// The information provided in this table is the total number of 
+	/// infected, sick and healthy individuals respectively for each day that has been recorded.
+	pub fn diagram(&self) -> [Vec<usize>; 3] {
+		let healthy = &self.inner()[&Individual::Healthy];
+		let infected = self.inner()[&Individual::Infected1].iter()
+			.zip(
+			self.inner()[&Individual::Infected2].iter()
+			).zip(
+			self.inner()[&Individual::Infected3].iter()
+			).map(|((inf1, inf2), inf3)| inf1 + inf2 + inf3)
+			.collect();
+		let sick = &self.inner()[&Individual::Sick];
+		[healthy.to_vec(), infected, sick.to_vec()]
+	}
+}
+
+impl Into<Vec<Vec<String>>> for CountingTable {
+	fn into(self) -> Vec<Vec<String>> {
+		let mut table = Vec::new();
+		table.push({
+			let mut row = vec!["Individual\\Day".to_string()];
+			row.extend((0..self.days()).map(|day| day.to_string()));
+			row
+			});
+		for i in Individual::iter() {
+			table.push({
+				let mut row = vec![i.to_string()];
+				row.extend((0..self.days()).map(|day| self.inner()[&i][day].to_string()));
+				row
+				});
+		}
+		table
+	}
+}
+
+impl core::fmt::Display for CountingTable {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> { 
+		let table: Vec<Vec<String>> = self.clone().into();
+		let mut out = String::new();
+		for row in table {
+			out += &format!("{:<15}", row[0]);
+			for index in 1..row.len() {
+				out += &format!("{:<3}", row[index]);
+			}
+			out += "\n"
+		}
+
+		write!(f, "{}", out)
 	}
 }
 
@@ -182,6 +232,12 @@ impl core::iter::FromIterator<(Individual, Vec<usize>)> for CountingTable {
 	}
 }
 
+
+impl From<CountingTable> for Array2<usize> {
+	fn from(counting_table: CountingTable) -> Array2<usize> {
+		Array2::from(&counting_table)
+	}
+}
 
 impl From<&CountingTable> for Array2<usize> {
 	fn from(counting_table: &CountingTable) -> Array2<usize> {
@@ -245,5 +301,27 @@ mod tests {
 		let counting_table: CountingTable = Individual::iter().map(|i| (i, vec![0])).collect();
 		let expected = array![[0], [0], [0], [0], [0], [0]];
 		assert_eq!(Array2::from(&counting_table), expected);
+	}
+
+	#[test]
+	fn diagram() {
+		let counting_table: CountingTable = Individual::iter().map(|i| (i, vec![1, 2])).collect();
+		let expected = [vec![1, 2], vec![3, 6], vec![1, 2]];
+		assert_eq!(counting_table.diagram(), expected);
+	}
+
+	#[test]
+	fn display() {
+		let counting_table: CountingTable = Individual::iter().map(|i| (i, vec![0])).collect();
+		let expected = String::from("\
+			Individual\\Day 0  \n\
+			Healthy        0  \n\
+			Infected1      0  \n\
+			Infected2      0  \n\
+			Infected3      0  \n\
+			Sick           0  \n\
+			Inmune         0  \n");
+		println!("{}", counting_table);
+		assert_eq!(format!("{}", counting_table), expected);
 	}
 }

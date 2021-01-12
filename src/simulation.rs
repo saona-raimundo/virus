@@ -42,7 +42,7 @@ pub struct Simulation {
 
 impl Simulation {
     /// Returns the result of the simulation.
-    pub fn run(self) -> Report {
+    pub fn run(&self) -> Report {
         let mut counting_tables = Vec::new();
         for _ in 0..*self.report_plan.num_simulations() {
             let mut board = self.board.clone();
@@ -52,7 +52,6 @@ impl Simulation {
         Report { counting_tables }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -86,6 +85,66 @@ mod tests {
             (Individual::Infected3, vec![0]), 
             (Individual::Sick, vec![3]), 
             (Individual::Inmune, vec![20])]);
+        assert_eq!(report.counting_tables(), &vec![expected]);
+    }
+
+    #[test]
+    fn run2() {
+        let simulation_builder = SimulationBuilder {
+            board_builder: BoardBuilder{
+                    healthy: 100,
+                    infected1: 0,
+                    infected2: 0,
+                    infected3: 0,
+                    sick: 3,
+                    inmune: 20,
+                    buildings: vec![(2, 2)],
+                    spreading: Spreading::OneNear,
+            },
+            report_plan: ReportPlan{
+                    num_simulations: 1,
+                    days: 1,
+            }
+        };
+        let simulation = simulation_builder.build();
+        let report = simulation.run();
+        let expected = CountingTable::from(vec![
+            (Individual::Healthy, vec![100, 100]), 
+            (Individual::Infected1, vec![0, 0]), 
+            (Individual::Infected2, vec![0, 0]), 
+            (Individual::Infected3, vec![0, 0]), 
+            (Individual::Sick, vec![3, 3]), 
+            (Individual::Inmune, vec![20, 20])]);
+        assert_eq!(report.counting_tables(), &vec![expected]);
+    }
+
+    #[test]
+    fn run3() {
+        let simulation_builder = SimulationBuilder {
+            board_builder: BoardBuilder{
+                    healthy: 100,
+                    infected1: 1,
+                    infected2: 0,
+                    infected3: 0,
+                    sick: 3,
+                    inmune: 0,
+                    buildings: vec![(200, 200)],
+                    spreading: Spreading::OneNear,
+            },
+            report_plan: ReportPlan{
+                    num_simulations: 1,
+                    days: 1,
+            }
+        };
+        let simulation = simulation_builder.build();
+        let report = simulation.run();
+        let expected = CountingTable::from(vec![
+            (Individual::Healthy, vec![100, 99]), 
+            (Individual::Infected1, vec![1, 1]), 
+            (Individual::Infected2, vec![0, 1]), 
+            (Individual::Infected3, vec![0, 0]), 
+            (Individual::Sick, vec![3, 3]), 
+            (Individual::Inmune, vec![0, 0])]);
         assert_eq!(report.counting_tables(), &vec![expected]);
     }
 }
