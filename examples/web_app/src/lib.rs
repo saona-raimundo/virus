@@ -2,7 +2,7 @@ mod utils;
 #[macro_use]
 mod debug;
 
-const DEBUG: bool = true;
+const DEBUG: bool = false;
 const SPREADING: Spreading = Spreading::OneVeryNear;
 
 use virus_alarm::prelude::*;
@@ -108,7 +108,7 @@ impl Input {
     /// Optimized for minimmal memory usage
     fn message_many(&mut self) -> String {
         // Computing
-        let quantity = 101;
+        let quantity = 100;
         let simulation = self.simulation(quantity);
         // Main computation
         let _timer_run = debug::Timer::new("Running many simulations");
