@@ -34,15 +34,22 @@ const simulateManyButton = document.getElementById("simulate_many");
 
 // Interactions
 simulateButton.addEventListener("click", event => {
-	console.time("simulation_js");
-	const input = read_input();
-	pre.textContent = input.message_js();
-	console.timeEnd("simulation_js");
+	pre.textContent = "Computing!";
+	setTimeout(function() {
+		console.time("simulation_js");
+		const input = read_input();
+		pre.textContent = input.message_js();
+		console.timeEnd("simulation_js");
+	}, 1);
 });
 
 simulateManyButton.addEventListener("click", event => {
-	console.time("simulation_many_js");
-	const input = read_input();
-	pre.textContent = input.message_many_js();
-	console.timeEnd("simulation_many_js");
+	pre.textContent = "Computing!";
+	setTimeout(function() {
+		console.time("simulation_many_js");
+		const input = read_input();
+		pre.textContent = input.message_many_js();
+		console.timeEnd("simulation_many_js");		
+	}, 1);
+	
 });
