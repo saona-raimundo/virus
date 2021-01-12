@@ -10,7 +10,7 @@ edition = "2018"
 ndarray = "0.14.0"
 thiserror = "1.0.22"
 gamma = "0.8.1"
-rand = { version = "0.7.3" } # , features = ["wasm-bindgen"] }
+rand = { version = "0.7.3" }
 strum = "0.20.0"
 strum_macros = "0.20.1"
 getset = "0.1.1"
