@@ -37,8 +37,8 @@ simulateButton.addEventListener("click", event => {
 	pre.textContent = "Computing!";
 	setTimeout(function() {
 		console.time("simulation_js");
-		const input = read_input();
-		pre.textContent = input.message_js();
+		const output = read_input().message_js();
+		pre.textContent = output;
 		console.timeEnd("simulation_js");
 	}, 1);
 });
@@ -47,8 +47,8 @@ simulateManyButton.addEventListener("click", event => {
 	pre.textContent = "Computing!";
 	setTimeout(function() {
 		console.time("simulation_many_js");
-		const input = read_input();
-		pre.textContent = input.message_many_js();
+		const output = read_input().message_many_js();
+		pre.textContent = output;
 		console.timeEnd("simulation_many_js");		
 	}, 1);
 	
