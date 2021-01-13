@@ -131,7 +131,7 @@ impl Default for Recording {
 /// 	Inmune         0  0  \n\
 /// "));
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Getters, MutGetters)]
+#[derive(Debug, Clone, PartialEq, Eq, Getters, MutGetters, Default)]
 pub struct CountingTable {
 	/// Returns a "table" with the counting of individual types per day.
 	///
@@ -142,11 +142,26 @@ pub struct CountingTable {
 }
 
 impl CountingTable {
+	/// Constructor
+	///
+	/// # Examples
+	///
+	/// ```
+	/// # use virus_alarm::recording::CountingTable;
+	/// CountingTable::new();
+	/// ```
+	pub fn new() -> Self {
+		Self { inner: HashMap::new() }
+	}
 
 	/// Returns the number of days counted.
 	pub fn days(&self) -> usize {
-		self.inner().get(&Individual::Healthy).expect("Tried to write an empty counting table!").len()
+		match self.inner().get(&Individual::Healthy) {
+			Some(v) => v.len(),
+			None => 0,
+		}
 	}
+
 	/// Writes the contents of the counting table on the writer.
 	///
 	/// # Remarks

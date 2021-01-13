@@ -46,15 +46,45 @@ impl Population {
 	}
 
 	/// Returns the number of individuals of the given type.
+	///
+	/// # Examples
+	///
+	/// Querying default population.
+	/// ```
+	/// use virus_alarm::prelude::*;
+	/// let population = Population::default();
+	/// assert_eq!(population.counting(Individual::Healthy), 98);
+	/// assert_eq!(population.counting(Individual::Infected1), 2);
+	/// ```
 	pub fn counting(&self, query: Individual) -> usize {
 		self.population.iter().filter(|&&i| i == query).count()
 	}
 
 	/// Returns the number of individuals of each type.
+	///
+	/// # Remarks
+	///
+	/// For individual queries, see `counting`, which is faster. 
+	/// This method is prefered is you need many queries.
+	///
+	/// # Examples
+	///
+	/// Default population.
+	/// ```
+	/// use virus_alarm::prelude::*;
+	/// let population = Population::default();
+	/// let hm = population.counting_all();
+	/// assert_eq!(hm[&Individual::Healthy], 98);
+	/// assert_eq!(hm[&Individual::Infected1], 2);
+	/// assert_eq!(hm[&Individual::Infected2], 0);
+	/// assert_eq!(hm[&Individual::Infected3], 0);
+	/// assert_eq!(hm[&Individual::Sick], 0);
+	/// assert_eq!(hm[&Individual::Inmune], 0);
+	/// ```
 	pub fn counting_all(&self) -> HashMap<Individual, usize> {
-		let mut hm = HashMap::new();
-		for query in Individual::iter() {
-			hm.insert(query, self.counting(query));
+		let mut hm: HashMap<Individual, usize> = Individual::iter().map(|i| (i, 0)).collect();
+		for individual in &self.population {
+			*hm.entry(*individual).or_insert(0) += 1;
 		}
 		hm
 	}
@@ -110,17 +140,5 @@ mod tests {
 		let population = Population::default();
 		assert_eq!(population.counting(Individual::Healthy), 98);
 		assert_eq!(population.counting(Individual::Infected1), 2);
-	}
-
-	#[test]
-	fn counting_all() {
-		let population = Population::default();
-		let hm = population.counting_all();
-		assert_eq!(hm[&Individual::Healthy], 98);
-		assert_eq!(hm[&Individual::Infected1], 2);
-		assert_eq!(hm[&Individual::Infected2], 0);
-		assert_eq!(hm[&Individual::Infected3], 0);
-		assert_eq!(hm[&Individual::Sick], 0);
-		assert_eq!(hm[&Individual::Inmune], 0);
 	}
 }

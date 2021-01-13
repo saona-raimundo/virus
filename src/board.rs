@@ -100,22 +100,32 @@ impl Board {
 	/// # Remarks
 	///
 	/// This is equivalent to use `advance` many times.
-	pub fn advance_many(&mut self, num_stages: usize) {
+	pub fn advance_many(&mut self, num_stages: usize) -> &mut Self{
 		for _ in 0..num_stages {
-			self.advance()
+			self.advance();
 		}
+		self
 	}
+
+	/// Advance the population a stage in the game, without registering the changes.
+	///
+	/// Returns the number of newly infected individuals
+	pub fn advance_population(&mut self) -> usize {
+		self.visit();
+		self.propagate();
+		self.go_back()
+	}
+
 
 	/// Advance a stage in the game.
 	///
 	/// # Remarks
 	///
-	/// This is a short method for all steps involved in a stage
-	pub fn advance(&mut self) {
-		self.visit();
-		self.propagate();
-		let newly_infected = self.go_back();
+	/// This is a short method for all steps involved in a stage.
+	pub fn advance(&mut self) -> &mut Self {
+		let newly_infected = self.advance_population();
 		self.recording.register(newly_infected, &self.buildings);
+		self
 	}
 
 	/// First step of any stage

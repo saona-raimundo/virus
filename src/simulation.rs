@@ -1,9 +1,9 @@
-
+use std::collections::HashMap;
 use crate::recording::CountingTable;
 use crate::prelude::{Board, BoardBuilder, Individual};
 use getset::{Getters, Setters, MutGetters};
 use serde::{Serialize, Deserialize};
-
+use strum::IntoEnumIterator;
 
 pub mod report;
 
@@ -41,6 +41,20 @@ pub struct Simulation {
 }
 
 impl Simulation {
+    /// Constructor
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use virus_alarm::prelude::*;
+    /// let board = Board::default();
+    /// let report_plan = ReportPlan { num_simulations: 10, days: 10 };
+    /// Simulation::new(board, report_plan);
+    /// ```
+    pub fn new(board: Board, report_plan: ReportPlan) -> Self {
+        Self { board, report_plan }
+    }
+
     /// Returns the result of the simulation.
     pub fn run(&self) -> Report {
         let mut counting_tables = Vec::new();
@@ -52,40 +66,23 @@ impl Simulation {
         Report { counting_tables }
     }
 
-    /// Returns the result of the last day of the simulation.
-    pub fn run_last_day(&self) -> ReportLastDay {
-        // Set-up
-        let mut healthy: Vec<usize> = Vec::new(); 
-        let mut sick: Vec<usize> = Vec::new(); 
-        let mut contained: Vec<bool> = Vec::new(); 
+    /// Returns the result of the last day of the simulation, 
+    /// grouped by individual variant.
+    pub fn run_last_day(&self) -> HashMap<Individual, Vec<usize>> {
+        let mut hm: HashMap<Individual, Vec<usize>> = 
+            Individual::iter().map(|i| (i, Vec::new())).collect();
 
-        // Computation
         for _ in 0..*self.report_plan.num_simulations() {
-            let mut healthy_sim = self.board().counting_table().inner()[&Individual::Healthy][0];
-            let mut infected1_sim = self.board().counting_table().inner()[&Individual::Infected1][0];
-            let mut infected2_sim = self.board().counting_table().inner()[&Individual::Infected2][0];
-            let mut infected3_sim = self.board().counting_table().inner()[&Individual::Infected3][0];
-            let mut sick_sim = self.board().counting_table().inner()[&Individual::Sick][0];
             let mut board = self.board.clone();
             for _ in 0..*self.report_plan.days() {
-                board.visit();
-                board.propagate();
-                let newly_infected = board.go_back();
-                healthy_sim -= newly_infected;
-                sick_sim += infected3_sim;
-                infected3_sim = infected2_sim;
-                infected2_sim = infected1_sim;
-                infected1_sim = newly_infected;
+                board.advance_population();
+            } 
+            let hm_sim = board.population().counting_all();
+            for individual in Individual::iter() {
+                hm.entry(individual).or_insert(Vec::new()).push(hm_sim[&individual]);
             }
-            let infected_sim = infected1_sim + infected2_sim + infected3_sim;
-            let contained_sim: bool = (healthy_sim > 0) && (infected_sim == 0);
-
-            // Saving results
-            healthy.push(healthy_sim);
-            sick.push(sick_sim);
-            contained.push(contained_sim);
         }
-        ReportLastDay { healthy, sick, contained }
+        hm
     }
 }
 
@@ -182,5 +179,36 @@ mod tests {
             (Individual::Sick, vec![3, 3]), 
             (Individual::Inmune, vec![0, 0])]);
         assert_eq!(report.counting_tables(), &vec![expected]);
+    }
+
+    #[test]
+    fn run_last_day() {
+        let simulation_builder = SimulationBuilder {
+            board_builder: BoardBuilder{
+                    healthy: 100,
+                    infected1: 1,
+                    infected2: 0,
+                    infected3: 0,
+                    sick: 3,
+                    inmune: 0,
+                    buildings: vec![(200, 200)],
+                    spreading: Spreading::OneNear,
+            },
+            report_plan: ReportPlan{
+                    num_simulations: 1,
+                    days: 1,
+            }
+        };
+        let simulation = simulation_builder.build();
+        let result = simulation.run_last_day();
+        let expected = vec![
+            (Individual::Healthy, vec![99]), 
+            (Individual::Infected1, vec![1]), 
+            (Individual::Infected2, vec![1]), 
+            (Individual::Infected3, vec![0]), 
+            (Individual::Sick, vec![3]), 
+            (Individual::Inmune, vec![0]),
+            ].into_iter().collect();
+        assert_eq!(result, expected);
     }
 }

@@ -83,19 +83,19 @@ impl Input {
         
         // Formating
         let mut out = String::new();
-        out += "Individual\\Day 0  1  2  3  4  5  6  7  8  9  10  \n";
-        out += "--------------+--+--+--+--+--+--+--+--+--+--+--\n";
-        out += &format!("{:<15}", "Healthy");
+        out += "Day / Tag             0  1  2  3  4  5  6  7  8  9  10  \n";
+        out += "---------------------+--+--+--+--+--+--+--+--+--+--+--\n";
+        out += &format!("{:<22}", "healthy / gesund");
         for day in 0..=10 {
-            out += &format!("{:<3}", diagram[0][day]);
+            out += &format!("{:<3}", diagram[0][day] + self.inmune);
         }
         out += "\n";
-        out += &format!("{:<15}", "Infected");
+        out += &format!("{:<22}", "infected / infiziert");
         for day in 0..=10 {
             out += &format!("{:<3}", diagram[1][day]);
         }
         out += "\n";
-        out += &format!("{:<15}", "Sick");
+        out += &format!("{:<22}", "sick / krank");
         for day in 0..=10 {
             out += &format!("{:<3}", diagram[2][day]);
         }
@@ -106,31 +106,51 @@ impl Input {
     }
 
     /// Optimized for minimmal memory usage
-    fn message_many(&mut self) -> String {
+    fn message_many(&mut self, quantity: usize) -> String {
         // Computing
-        let quantity = 100;
         let simulation = self.simulation(quantity);
         // Main computation
         let _timer_run = debug::Timer::new("Running many simulations");
         let report_last_day = simulation.run_last_day();
         let normalization = *simulation.report_plan().num_simulations() as f32;
-        let healthy = report_last_day.healthy().iter().sum::<usize>() as f32 / normalization;
-        let sick = report_last_day.sick().iter().sum::<usize>() as f32 / normalization;
-        let contained = report_last_day.contained().iter().map(|b| if *b { 1 } else { 0 }).sum::<usize>() as f32 / normalization;
+        // Summarizing
+        let healthy_average = report_last_day[&Individual::Healthy].iter()
+            .sum::<usize>() as f32 / normalization;
+        let healthy_and_inmune_average = healthy_average +
+            report_last_day[&Individual::Inmune].iter()
+                .sum::<usize>() as f32 / normalization;
+        let sick_average = report_last_day[&Individual::Sick].iter()
+            .sum::<usize>() as f32 / normalization;
+        let contained_average = (0..*simulation.report_plan().num_simulations())
+            .map(|sim_index| {
+                let infected_sim = report_last_day[&Individual::Infected1][sim_index]
+                    + report_last_day[&Individual::Infected2][sim_index]
+                    + report_last_day[&Individual::Infected3][sim_index];
+                let healthy_or_inmune_sim = report_last_day[&Individual::Healthy][sim_index]
+                    + report_last_day[&Individual::Inmune][sim_index];
+                (infected_sim == 0) && (healthy_or_inmune_sim > 0)
+            })
+            .map(|b| if b { 1 } else { 0 })
+            .sum::<usize>() as f32 / normalization;
         std::mem::drop(_timer_run);
 
         // Formating
         let mut out = String::new();
-        out += "Mean after 10 days\n";
-        out += "------------------\n";
-        out += &format!("{:<6.2}", healthy);
-        out += "healthy\n";
-        out += &format!("{:<6.2}", sick);
-        out += "sick\n";
-        out += &format!("{:<6}", format!("{:.0}%", 100. * healthy / (98 - self.inmune) as f32));
-        out += "unvaccinated people still healthy\n";
-        out += &format!("{:<6}", format!("{:.0}%", 100. * contained));
-        out += "contained outbreaks\n";
+        out += "Mean after 10 days / Mittelwert nach 10 Tagen\n";
+        out += "---------------------------------------------\n";
+        out += &format!("{:<6.2}", healthy_and_inmune_average);
+        out += "healthy (incl. vaccinated) / gesund (inkl. Geimpfte)\n";
+        out += &format!("{:<6.2}", sick_average);
+        out += "sick / krank\n";
+        out += &format!("{:<6}", format!("{:.0}%", 100. * healthy_average / (98 - self.inmune) as f32));
+        out += "unvaccinated people still healthy / noch gesunde nicht-Geimpfte\n";
+        out += &format!("{:<6}", format!("{:.0}%", 100. * contained_average));
+        out += "contained outbreaks / eingedämmte Ausbrüche\n\n\
+                An outbreak is contained if the virus can no \
+                longer spread before infecting everyone.\n\
+                Ein Ausbruch gilt als eingedämmt wenn das Virus \
+                sich nicht mehr weiter ausbreiten kann vordem es \
+                alle infiziert hat.";
         debug!("Simulated {} times and obtained\n{}", quantity, out);
         out
     }
@@ -168,9 +188,9 @@ impl Input {
     pub fn message_js(&mut self) -> String {
         self.message()
     }
-    pub fn message_many_js(&mut self) -> String {
+    pub fn message_many_js(&mut self, quantity: usize) -> String {
         let _timer = debug::Timer::new("Many simulations");
-        self.message_many()
+        self.message_many(quantity)
     }
 }
 
@@ -203,14 +223,14 @@ mod tests {
     #[test]
     fn message_many() {
         let result = Input::new(98, true, true, true, true, true, true, true, true)
-            .message_many();
+            .message_many(100);
         let expected = String::from("\
             Mean after 10 days\n\
             ------------------\n\
-            0.00  healthy\n\
+            98.00 healthy\n\
             2.00  sick\n\
             NaN%  unvaccinated people still healthy\n\
-            0%    contained outbreaks\n\
+            100%  contained outbreaks\n\
         ");
         assert_eq!(result, expected);
     }

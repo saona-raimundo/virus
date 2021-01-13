@@ -30,7 +30,7 @@ pub enum Spreading {
 
 impl Default for Spreading {
     fn default() -> Self { 
-        Spreading::OneNear
+        Spreading::OneVeryNear
     }
 }
 
