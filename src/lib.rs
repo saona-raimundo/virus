@@ -50,6 +50,12 @@ pub mod errors {
         #[error("Sick individuals are not allowed in the buildings")]
         Sick,
     }
+
+    #[derive(Error, Debug, PartialEq, Eq)]
+    pub enum ActionError {
+        #[error("There are no more healthy people in the population")]
+        NoHealthyLeft,
+    }
 }
 
 #[cfg(test)]

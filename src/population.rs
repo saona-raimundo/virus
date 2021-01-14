@@ -11,6 +11,31 @@ pub struct Population {
 }
 
 impl Population {
+	/// Immunize one person in the population. 
+	/// 
+	/// # Errors
+	///
+	/// If there is no healthy individual to immunize.
+	///
+	/// # Examples
+	///
+	/// Immunize one person from the default population.
+	/// ```
+	/// # use virus_alarm::prelude::*;
+	/// let mut population = Population::default();
+	/// population.immunize();
+	/// assert_eq!(population.counting(Individual::Inmune), 1);
+	/// ```
+	pub fn immunize(&mut self) -> Result<&mut Self, crate::errors::ActionError> {
+		for i in self.population.iter_mut() {
+		    if i == &mut Individual::Healthy {
+		    	*i = Individual::Inmune;
+		    	return Ok(self)
+		    }
+		}
+	    Err(crate::errors::ActionError::NoHealthyLeft)
+	}
+
 	/// change current population for `new_population`.
 	///
 	/// # Panics
