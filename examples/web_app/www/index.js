@@ -31,8 +31,8 @@ function read_input() {
 const pre = document.getElementById("output");
 const simulateButton = document.getElementById("simulate");
 const simulate100Button = document.getElementById("simulate_100");
-const simulate200Button = document.getElementById("simulate_200");
-const simulate1000Button = document.getElementById("simulate_1000");
+// const simulate200Button = document.getElementById("simulate_200");
+// const simulate1000Button = document.getElementById("simulate_1000");
 
 // Interactions
 simulateButton.addEventListener("click", event => {
@@ -55,22 +55,22 @@ simulate100Button.addEventListener("click", event => {
 	}, 1);
 });
 
-simulate200Button.addEventListener("click", event => {
-	pre.textContent = "Computing!";
-	setTimeout(function() {
-		console.time("simulation_many_js");
-		const output = read_input().message_many_js(200);
-		pre.textContent = output;
-		console.timeEnd("simulation_many_js");		
-	}, 1);
-});
+// simulate200Button.addEventListener("click", event => {
+// 	pre.textContent = "Computing!";
+// 	setTimeout(function() {
+// 		console.time("simulation_many_js");
+// 		const output = read_input().message_many_js(200);
+// 		pre.textContent = output;
+// 		console.timeEnd("simulation_many_js");		
+// 	}, 1);
+// });
 
-simulate1000Button.addEventListener("click", event => {
-	pre.textContent = "Computing!";
-	setTimeout(function() {
-		console.time("simulation_many_js");
-		const output = read_input().message_many_js(1000);
-		pre.textContent = output;
-		console.timeEnd("simulation_many_js");		
-	}, 1);
-});
+// simulate1000Button.addEventListener("click", event => {
+// 	pre.textContent = "Computing!";
+// 	setTimeout(function() {
+// 		console.time("simulation_many_js");
+// 		const output = read_input().message_many_js(1000);
+// 		pre.textContent = output;
+// 		console.timeEnd("simulation_many_js");		
+// 	}, 1);
+// });
