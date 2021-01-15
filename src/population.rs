@@ -24,16 +24,43 @@ impl Population {
 	/// # use virus_alarm::prelude::*;
 	/// let mut population = Population::default();
 	/// population.immunize();
-	/// assert_eq!(population.counting(Individual::Inmune), 1);
+	/// assert_eq!(population.counting(Individual::Immune), 1);
 	/// ```
 	pub fn immunize(&mut self) -> Result<&mut Self, crate::errors::ActionError> {
 		for i in self.population.iter_mut() {
 		    if i == &mut Individual::Healthy {
-		    	*i = Individual::Inmune;
+		    	*i = Individual::Immune;
 		    	return Ok(self)
 		    }
 		}
 	    Err(crate::errors::ActionError::NoHealthyLeft)
+	}
+
+	/// Reverse one person from immune to healthy in the population. 
+	/// 
+	/// # Errors
+	///
+	/// If there is no immune individual to reverse.
+	///
+	/// # Examples
+	///
+	/// Immunize one person from the default population, and then reverse it.
+	/// ```
+	/// # use virus_alarm::prelude::*;
+	/// let mut population = Population::default();
+	/// population.immunize();
+	/// assert_eq!(population.counting(Individual::Immune), 1);
+	/// population.reverse_immunize();
+	/// assert_eq!(population.counting(Individual::Immune), 0);
+	/// ```
+	pub fn reverse_immunize(&mut self) -> Result<&mut Self, crate::errors::ActionError> {
+		for i in self.population.iter_mut() {
+		    if i == &mut Individual::Immune {
+		    	*i = Individual::Healthy;
+		    	return Ok(self)
+		    }
+		}
+	    Err(crate::errors::ActionError::NoImmuneLeft)
 	}
 
 	/// change current population for `new_population`.
@@ -104,7 +131,7 @@ impl Population {
 	/// assert_eq!(hm[&Individual::Infected2], 0);
 	/// assert_eq!(hm[&Individual::Infected3], 0);
 	/// assert_eq!(hm[&Individual::Sick], 0);
-	/// assert_eq!(hm[&Individual::Inmune], 0);
+	/// assert_eq!(hm[&Individual::Immune], 0);
 	/// ```
 	pub fn counting_all(&self) -> HashMap<Individual, usize> {
 		let mut hm: HashMap<Individual, usize> = Individual::iter().map(|i| (i, 0)).collect();

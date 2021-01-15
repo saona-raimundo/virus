@@ -9,7 +9,7 @@ fn main() {
                 infected2: 0,
                 infected3: 0,
                 sick: 3,
-                inmune: 20,
+                immune: 20,
                 buildings: vec![(0, 0)],
                 spreading: Spreading::OneNear,
         },

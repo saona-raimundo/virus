@@ -13,8 +13,8 @@ pub enum Individual {
     Infected3,
     /// Sick person, who goes to the hospital
     Sick,
-    /// Vaccinated, and therefore inmune, person
-    Inmune,
+    /// Vaccinated, and therefore immune, person
+    Immune,
 }
 
 impl Individual {
@@ -23,7 +23,7 @@ impl Individual {
     /// This is only possible if self is infected and other is healthy.
     pub fn can_infect(&self, other: &Individual) -> bool {
         match self {
-            Individual::Healthy | Individual::Sick | Individual::Inmune => false,
+            Individual::Healthy | Individual::Sick | Individual::Immune => false,
             _ => match other {
                 Individual::Healthy => true,
                 _ => false,
@@ -52,7 +52,7 @@ mod tests {
 	#[test_case(Individual::Infected1, Individual::Healthy, true)]
 	#[test_case(Individual::Infected2, Individual::Healthy, true)]
 	#[test_case(Individual::Infected3, Individual::Healthy, true)]
-	#[test_case(Individual::Infected2, Individual::Inmune, false)]
+	#[test_case(Individual::Infected2, Individual::Immune, false)]
 	fn can_infect(i: Individual, other: Individual, expected: bool) {
 		assert_eq!(i.can_infect(&other), expected);
 	}
@@ -61,8 +61,8 @@ mod tests {
 	#[test_case(Individual::Infected1, Individual::Healthy, true)]
 	#[test_case(Individual::Infected2, Individual::Healthy, true)]
 	#[test_case(Individual::Infected3, Individual::Healthy, true)]
-	#[test_case(Individual::Infected2, Individual::Inmune, false)]
-	#[test_case(Individual::Inmune, Individual::Inmune, false)]
+	#[test_case(Individual::Infected2, Individual::Immune, false)]
+	#[test_case(Individual::Immune, Individual::Immune, false)]
 	fn interacts_with(i: Individual, other: Individual, expected: bool) {
 		assert_eq!(i.interacts_with(&other), expected);
 	}
@@ -71,8 +71,8 @@ mod tests {
     #[test_case(Individual::Infected1, Individual::Infected2, true)]
     #[test_case(Individual::Infected2, Individual::Infected3, true)]
     #[test_case(Individual::Infected3, Individual::Sick, true)]
-    #[test_case(Individual::Sick, Individual::Inmune, true)]
-    #[test_case(Individual::Inmune, Individual::Healthy, false)]
+    #[test_case(Individual::Sick, Individual::Immune, true)]
+    #[test_case(Individual::Immune, Individual::Healthy, false)]
     fn order(i: Individual, other: Individual, expected: bool) {
         assert_eq!(i < other, expected);
     }

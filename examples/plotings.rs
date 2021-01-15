@@ -12,7 +12,10 @@ fn main() {
 	for i in 0..simulations.len() {
 		let simulation = simulations[i].clone();
 		let report = simulation.run();
-		let healthy: Vec<Vec<f64>> = report.healthy_transpose().iter().map(|v| v.iter().map(|&x| x as f64).collect()).collect();
+		let healthy: Vec<Vec<f64>> = report.individual_transpose(&Individual::Healthy)
+			.iter()
+			.map(|v| v.iter().map(|&x| x as f64).collect())
+			.collect();
 		// Mean +- Error
 		let average = pre::SequenceError::new(healthy.clone())
         	.set_title(format!("config {}", i))

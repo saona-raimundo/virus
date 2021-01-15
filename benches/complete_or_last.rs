@@ -2,13 +2,9 @@ use criterion::{criterion_group, criterion_main, Criterion}; //, BenchmarkId};
 use virus_alarm::prelude::*;
 
 fn set_up() -> Simulation {
-	let mut simulation_builder = SimulationBuilder::default();
-	simulation_builder.set_report_plan(
-		ReportPlan {
-			num_simulations: 10000,
-			days: 10,
-		});
-	simulation_builder.build()
+	let board = Board::default();
+	let report_plan = ReportPlan { num_simulations: 5, days: 10 };
+	Simulation::new(board, report_plan)
 }
 
 fn run_complete(simulation: &Simulation) {
@@ -24,6 +20,7 @@ fn bench_running(c: &mut Criterion) {
 	// Setup
 	let simulation = set_up();
     let mut group = c.benchmark_group("Simulation run");
+    group.sample_size(1_000);
     group.bench_with_input("Complete", &simulation, |b, sim| b.iter(|| {
     	run_complete(sim) 
     }));

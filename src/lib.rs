@@ -53,8 +53,10 @@ pub mod errors {
 
     #[derive(Error, Debug, PartialEq, Eq)]
     pub enum ActionError {
-        #[error("There are no more healthy people in the population")]
+        #[error("There are no more healthy individuals in the population")]
         NoHealthyLeft,
+        #[error("There are no more immune individuals in the population")]
+        NoImmuneLeft,
     }
 }
 

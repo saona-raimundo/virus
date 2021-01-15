@@ -150,6 +150,19 @@ impl Building {
         self
     }
 
+    /// Toggles (changes the open state) the building.
+    ///
+    /// # Panics
+    ///
+    /// If the building is open and not empty.
+    pub fn toggle(&mut self) {
+        if self.open {
+            self.close();
+        } else {
+            self.open();
+        }
+    }
+
     /// Closes the building
     ///
     /// # Panics
@@ -288,7 +301,7 @@ impl Building {
                 Some(Individual::Infected2) => Some(Individual::Infected3),
                 Some(Individual::Infected3) => Some(Individual::Sick),
                 Some(Individual::Sick) => panic!("There should not have been a sick person in the building"),
-                Some(Individual::Inmune) => Some(Individual::Inmune),
+                Some(Individual::Immune) => Some(Individual::Immune),
                 None => None,
 			}
 		});
@@ -320,7 +333,7 @@ impl Building {
                 Some(Individual::Infected2) => Some(Individual::Infected3),
                 Some(Individual::Infected3) => Some(Individual::Sick),
                 Some(Individual::Sick) => panic!("There should not have been a sick person in the building"),
-                Some(Individual::Inmune) => Some(Individual::Inmune),
+                Some(Individual::Immune) => Some(Individual::Immune),
                 None => None,
 			}
 		});
@@ -365,7 +378,7 @@ impl Building {
                         Individual::Infected2 => Individual::Infected3,
                         Individual::Infected3 => Individual::Sick,
                         Individual::Sick => panic!("There should not have been a sick person in the building"),
-                        Individual::Inmune => Individual::Inmune,
+                        Individual::Immune => Individual::Immune,
                     });
                 }
             }
@@ -561,25 +574,25 @@ mod tests {
 			[Individual::Infected1, Individual::Infected1] 
 		]; "three options")]
 	#[test_case(array![
-			[Individual::Inmune, Individual::Infected3],
+			[Individual::Immune, Individual::Infected3],
 			[Individual::Healthy, Individual::Healthy] 
 		], array![
-			[Individual::Inmune, Individual::Sick],
+			[Individual::Immune, Individual::Sick],
 			[Individual::Infected1, Individual::Infected1] 
 		]; "two options")]
 	#[test_case(array![
-			[Individual::Inmune, Individual::Infected3],
-			[Individual::Healthy, Individual::Inmune] 
+			[Individual::Immune, Individual::Infected3],
+			[Individual::Healthy, Individual::Immune] 
 		], array![
-			[Individual::Inmune, Individual::Sick],
-			[Individual::Infected1, Individual::Inmune] 
+			[Individual::Immune, Individual::Sick],
+			[Individual::Infected1, Individual::Immune] 
 		]; "diagonal increasing")]
 	#[test_case(array![
-			[Individual::Healthy, Individual::Inmune],
-			[Individual::Inmune, Individual::Infected3] 
+			[Individual::Healthy, Individual::Immune],
+			[Individual::Immune, Individual::Infected3] 
 		], array![
-			[Individual::Infected1, Individual::Inmune],
-			[Individual::Inmune, Individual::Sick] 
+			[Individual::Infected1, Individual::Immune],
+			[Individual::Immune, Individual::Sick] 
 		]; "diagonal decreasing")]
 	fn propagate_everyone(initial: Array2<Individual>, expected: Array2<Individual>) {
 		let mut initial = Building::unchecked_from(initial);
@@ -605,25 +618,25 @@ mod tests {
 			[Individual::Healthy, Individual::Healthy] 
 		]; "three options")]
 	#[test_case(array![
-			[Individual::Inmune, Individual::Infected3],
+			[Individual::Immune, Individual::Infected3],
 			[Individual::Healthy, Individual::Healthy] 
 		], array![
-			[Individual::Inmune, Individual::Sick],
+			[Individual::Immune, Individual::Sick],
 			[Individual::Infected1, Individual::Healthy] 
 		]; "two options")]
 	#[test_case(array![
-			[Individual::Inmune, Individual::Infected3],
-			[Individual::Healthy, Individual::Inmune] 
+			[Individual::Immune, Individual::Infected3],
+			[Individual::Healthy, Individual::Immune] 
 		], array![
-			[Individual::Inmune, Individual::Sick],
-			[Individual::Infected1, Individual::Inmune] 
+			[Individual::Immune, Individual::Sick],
+			[Individual::Infected1, Individual::Immune] 
 		]; "diagonal increasing")]
 	#[test_case(array![
-			[Individual::Healthy, Individual::Inmune],
-			[Individual::Inmune, Individual::Infected3] 
+			[Individual::Healthy, Individual::Immune],
+			[Individual::Immune, Individual::Infected3] 
 		], array![
-			[Individual::Infected1, Individual::Inmune],
-			[Individual::Inmune, Individual::Sick] 
+			[Individual::Infected1, Individual::Immune],
+			[Individual::Immune, Individual::Sick] 
 		]; "diagonal decreasing")]
 	fn propagate_one(initial: Array2<Individual>, expected: Array2<Individual>) {
 		let mut initial = Building::unchecked_from(initial);
@@ -649,25 +662,25 @@ mod tests {
 			[Individual::Healthy, Individual::Healthy] 
 		]; "three options")]
 	#[test_case(array![
-			[Individual::Inmune, Individual::Infected3],
+			[Individual::Immune, Individual::Infected3],
 			[Individual::Healthy, Individual::Healthy] 
 		], array![
-			[Individual::Inmune, Individual::Sick],
+			[Individual::Immune, Individual::Sick],
 			[Individual::Infected1, Individual::Healthy] 
 		]; "two options")]
 	#[test_case(array![
-			[Individual::Inmune, Individual::Infected3],
-			[Individual::Healthy, Individual::Inmune] 
+			[Individual::Immune, Individual::Infected3],
+			[Individual::Healthy, Individual::Immune] 
 		], array![
-			[Individual::Inmune, Individual::Sick],
-			[Individual::Infected1, Individual::Inmune] 
+			[Individual::Immune, Individual::Sick],
+			[Individual::Infected1, Individual::Immune] 
 		]; "diagonal increasing")]
 	#[test_case(array![
-			[Individual::Healthy, Individual::Inmune],
-			[Individual::Inmune, Individual::Infected3] 
+			[Individual::Healthy, Individual::Immune],
+			[Individual::Immune, Individual::Infected3] 
 		], array![
-			[Individual::Infected1, Individual::Inmune],
-			[Individual::Inmune, Individual::Sick] 
+			[Individual::Infected1, Individual::Immune],
+			[Individual::Immune, Individual::Sick] 
 		]; "diagonal decreasing")]
 	#[test_case(array![
 			[Individual::Healthy, Individual::Healthy],
@@ -700,25 +713,25 @@ mod tests {
 			[Individual::Healthy, Individual::Healthy] 
 		]; "three options")]
 	#[test_case(array![
-			[Individual::Inmune, Individual::Infected3],
+			[Individual::Immune, Individual::Infected3],
 			[Individual::Healthy, Individual::Healthy] 
 		], array![
-			[Individual::Inmune, Individual::Sick],
+			[Individual::Immune, Individual::Sick],
 			[Individual::Healthy, Individual::Infected1] 
 		]; "two options")]
 	#[test_case(array![
-			[Individual::Inmune, Individual::Infected3],
-			[Individual::Healthy, Individual::Inmune] 
+			[Individual::Immune, Individual::Infected3],
+			[Individual::Healthy, Individual::Immune] 
 		], array![
-			[Individual::Inmune, Individual::Sick],
-			[Individual::Healthy, Individual::Inmune] 
+			[Individual::Immune, Individual::Sick],
+			[Individual::Healthy, Individual::Immune] 
 		]; "diagonal increasing")]
 	#[test_case(array![
-			[Individual::Healthy, Individual::Inmune],
-			[Individual::Inmune, Individual::Infected3] 
+			[Individual::Healthy, Individual::Immune],
+			[Individual::Immune, Individual::Infected3] 
 		], array![
-			[Individual::Healthy, Individual::Inmune],
-			[Individual::Inmune, Individual::Sick] 
+			[Individual::Healthy, Individual::Immune],
+			[Individual::Immune, Individual::Sick] 
 		]; "diagonal decreasing")]
 	fn propagate_oneverynear(initial: Array2<Individual>, expected: Array2<Individual>) {
 		let mut initial = Building::unchecked_from(initial);

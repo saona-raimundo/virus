@@ -31,9 +31,9 @@ pub struct BoardBuilder {
     /// Number of sick individuals
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
     pub sick: usize,
-    /// Number of inmune individuals
+    /// Number of immune individuals
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
-    pub inmune: usize,
+    pub immune: usize,
     /// Current state of the buildings in the game
     #[getset(get = "pub", set = "pub", get_mut = "pub")]
     pub buildings: Vec<(usize, usize)>,
@@ -50,7 +50,7 @@ impl BoardBuilder {
 		population_vec.append(&mut vec![Individual::Infected2; self.infected2]);
 		population_vec.append(&mut vec![Individual::Infected3; self.infected3]);
 		population_vec.append(&mut vec![Individual::Sick; self.sick]);
-		population_vec.append(&mut vec![Individual::Inmune; self.inmune]);
+		population_vec.append(&mut vec![Individual::Immune; self.immune]);
 		let population = Population::from(population_vec);
 
 		// Buildings
@@ -93,6 +93,50 @@ impl Board {
 			recording,
 			..default
 		}
+	}
+
+	/// Immunize one person in the population. 
+	/// 
+	/// # Errors
+	///
+	/// If there is no healthy individual to immunize.
+	///
+	/// # Examples
+	///
+	/// Immunize one person from the default population.
+	/// ```
+	/// # use virus_alarm::prelude::*;
+	/// let mut board = Board::default();
+	/// board.immunize();
+	/// assert_eq!(board.population().counting(Individual::Immune), 1);
+	/// ```
+	pub fn immunize(&mut self) -> Result<&mut Self, crate::errors::ActionError> {
+		self.population.immunize()?;
+		Ok(self)
+		// There is no recording of this action!!
+	}
+
+	/// Reverse one individual from immune to healthy in the population. 
+	/// 
+	/// # Errors
+	///
+	/// If there is no immune individual to reverse.
+	///
+	/// # Examples
+	///
+	/// Immunize one person from the default population and then set it back.
+	/// ```
+	/// # use virus_alarm::prelude::*;
+	/// let mut board = Board::default();
+	/// board.immunize();
+	/// assert_eq!(board.population().counting(Individual::Immune), 1);
+	/// board.reverse_immunize();
+	/// assert_eq!(board.population().counting(Individual::Immune), 0);
+	/// ```
+	pub fn reverse_immunize(&mut self) -> Result<&mut Self, crate::errors::ActionError> {
+		self.population.reverse_immunize()?;
+		Ok(self)
+		// There is no recording of this action!!
 	}
 
 	/// Advance the specified number of stages in the game.
@@ -192,6 +236,18 @@ impl Board {
 		self.population = new_population;
 
 		newly_infected
+	}
+
+
+	/// Closes a building
+	pub fn toggle<S: Display>(&mut self, name: S) -> &mut Self {
+		let name = name.to_string();
+		for building in self.buildings.iter_mut() {
+			if building.name() == &name {
+				building.toggle();
+			}
+		}
+		self
 	}
 
 	/// Closes a building

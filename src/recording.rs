@@ -75,7 +75,7 @@ impl Recording {
 	 	counting_table.inner_mut().entry(Individual::Infected2).and_modify(|v| v.push(last_values[1]));
 	 	counting_table.inner_mut().entry(Individual::Infected3).and_modify(|v| v.push(last_values[2]));
 	 	counting_table.inner_mut().entry(Individual::Sick).and_modify(|v| v.push(last_values[3] + last_values[4]));
-	 	counting_table.inner_mut().entry(Individual::Inmune).and_modify(|v| v.push(last_values[5]));
+	 	counting_table.inner_mut().entry(Individual::Immune).and_modify(|v| v.push(last_values[5]));
 	}
 
 	fn last_counting_table(&self) -> Vec<usize> {
@@ -85,7 +85,7 @@ impl Recording {
 	 		self.counting_table().inner()[&Individual::Infected2].last(),
 	 		self.counting_table().inner()[&Individual::Infected3].last(),
 	 		self.counting_table().inner()[&Individual::Sick].last(),
-	 		self.counting_table().inner()[&Individual::Inmune].last(),
+	 		self.counting_table().inner()[&Individual::Immune].last(),
 	 	].iter().map(|x| x.unwrap().clone()).collect()
 	}
 }
@@ -119,7 +119,7 @@ impl Default for Recording {
 /// 	(Individual::Infected2, vec![0, 2]),
 /// 	(Individual::Infected3, vec![0, 0]),
 /// 	(Individual::Sick, vec![0, 0]),
-/// 	(Individual::Inmune, vec![0, 0]),
+/// 	(Individual::Immune, vec![0, 0]),
 /// ]);
 /// assert_eq!(counting_table.to_string(), String::from("\
 /// 	Individual\\Day 0  1  \n\
@@ -128,7 +128,7 @@ impl Default for Recording {
 /// 	Infected2      0  2  \n\
 /// 	Infected3      0  0  \n\
 /// 	Sick           0  0  \n\
-/// 	Inmune         0  0  \n\
+/// 	Immune         0  0  \n\
 /// "));
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Getters, MutGetters, Default)]
@@ -307,7 +307,7 @@ mod tests {
 		let counting_table: CountingTable = Individual::iter().map(|i| (i, vec![0])).collect();
 		let writer = counting_table.write_on(writer)?;
 		let data = String::from_utf8(writer.into_inner().unwrap()).unwrap();
-		assert_eq!(data, String::from("Individual\\Day,0\nHealthy,0\nInfected1,0\nInfected2,0\nInfected3,0\nSick,0\nInmune,0\n"));
+		assert_eq!(data, String::from("Individual\\Day,0\nHealthy,0\nInfected1,0\nInfected2,0\nInfected3,0\nSick,0\nImmune,0\n"));
 		Ok(())
 	}
 
@@ -335,7 +335,7 @@ mod tests {
 			Infected2      0  \n\
 			Infected3      0  \n\
 			Sick           0  \n\
-			Inmune         0  \n");
+			Immune         0  \n");
 		println!("{}", counting_table);
 		assert_eq!(format!("{}", counting_table), expected);
 	}

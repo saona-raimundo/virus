@@ -1,9 +1,8 @@
-use std::collections::HashMap;
 use crate::recording::CountingTable;
-use crate::prelude::{Board, BoardBuilder, Individual};
+use crate::prelude::{Board, BoardBuilder};
 use getset::{Getters, Setters, MutGetters};
 use serde::{Serialize, Deserialize};
-use strum::IntoEnumIterator;
+
 
 pub mod report;
 
@@ -66,24 +65,24 @@ impl Simulation {
         Report { counting_tables }
     }
 
-    /// Returns the result of the last day of the simulation, 
-    /// grouped by individual variant.
-    pub fn run_last_day(&self) -> HashMap<Individual, Vec<usize>> {
-        let mut hm: HashMap<Individual, Vec<usize>> = 
-            Individual::iter().map(|i| (i, Vec::new())).collect();
+    // /// Returns the result of the last day of the simulation, 
+    // /// grouped by individual variant.
+    // pub fn run_last_day(&self) -> HashMap<Individual, Vec<usize>> {
+    //     let mut hm: HashMap<Individual, Vec<usize>> = 
+    //         Individual::iter().map(|i| (i, Vec::new())).collect();
 
-        for _ in 0..*self.report_plan.num_simulations() {
-            let mut board = self.board.clone();
-            for _ in 0..*self.report_plan.days() {
-                board.advance_population();
-            } 
-            let hm_sim = board.population().counting_all();
-            for individual in Individual::iter() {
-                hm.entry(individual).or_insert(Vec::new()).push(hm_sim[&individual]);
-            }
-        }
-        hm
-    }
+    //     for _ in 0..*self.report_plan.num_simulations() {
+    //         let mut board = self.board.clone();
+    //         for _ in 0..*self.report_plan.days() {
+    //             board.advance_population();
+    //         } 
+    //         let hm_sim = board.population().counting_all();
+    //         for individual in Individual::iter() {
+    //             hm.entry(individual).or_insert(Vec::new()).push(hm_sim[&individual]);
+    //         }
+    //     }
+    //     hm
+    // }
 }
 
 #[cfg(test)]
@@ -100,7 +99,7 @@ mod tests {
                     infected2: 0,
                     infected3: 0,
                     sick: 3,
-                    inmune: 20,
+                    immune: 20,
                     buildings: vec![(0, 0)],
                     spreading: Spreading::OneNear,
             },
@@ -117,7 +116,7 @@ mod tests {
             (Individual::Infected2, vec![0]), 
             (Individual::Infected3, vec![0]), 
             (Individual::Sick, vec![3]), 
-            (Individual::Inmune, vec![20])]);
+            (Individual::Immune, vec![20])]);
         assert_eq!(report.counting_tables(), &vec![expected]);
     }
 
@@ -130,7 +129,7 @@ mod tests {
                     infected2: 0,
                     infected3: 0,
                     sick: 3,
-                    inmune: 20,
+                    immune: 20,
                     buildings: vec![(2, 2)],
                     spreading: Spreading::OneNear,
             },
@@ -147,7 +146,7 @@ mod tests {
             (Individual::Infected2, vec![0, 0]), 
             (Individual::Infected3, vec![0, 0]), 
             (Individual::Sick, vec![3, 3]), 
-            (Individual::Inmune, vec![20, 20])]);
+            (Individual::Immune, vec![20, 20])]);
         assert_eq!(report.counting_tables(), &vec![expected]);
     }
 
@@ -160,7 +159,7 @@ mod tests {
                     infected2: 0,
                     infected3: 0,
                     sick: 3,
-                    inmune: 0,
+                    immune: 0,
                     buildings: vec![(200, 200)],
                     spreading: Spreading::OneNear,
             },
@@ -177,7 +176,7 @@ mod tests {
             (Individual::Infected2, vec![0, 1]), 
             (Individual::Infected3, vec![0, 0]), 
             (Individual::Sick, vec![3, 3]), 
-            (Individual::Inmune, vec![0, 0])]);
+            (Individual::Immune, vec![0, 0])]);
         assert_eq!(report.counting_tables(), &vec![expected]);
     }
 
@@ -190,7 +189,7 @@ mod tests {
                     infected2: 0,
                     infected3: 0,
                     sick: 3,
-                    inmune: 0,
+                    immune: 0,
                     buildings: vec![(200, 200)],
                     spreading: Spreading::OneNear,
             },
@@ -199,16 +198,23 @@ mod tests {
                     days: 1,
             }
         };
-        let simulation = simulation_builder.build();
-        let result = simulation.run_last_day();
+        let report = simulation_builder.build().run();
+        let result = vec![
+            report.individual_last(&Individual::Healthy),
+            report.individual_last(&Individual::Infected1),
+            report.individual_last(&Individual::Infected2),
+            report.individual_last(&Individual::Infected3),
+            report.individual_last(&Individual::Sick),
+            report.individual_last(&Individual::Immune),
+        ];
         let expected = vec![
-            (Individual::Healthy, vec![99]), 
-            (Individual::Infected1, vec![1]), 
-            (Individual::Infected2, vec![1]), 
-            (Individual::Infected3, vec![0]), 
-            (Individual::Sick, vec![3]), 
-            (Individual::Inmune, vec![0]),
-            ].into_iter().collect();
+            vec![&99], 
+            vec![&1], 
+            vec![&1], 
+            vec![&0], 
+            vec![&3], 
+            vec![&0],
+            ];
         assert_eq!(result, expected);
     }
 }

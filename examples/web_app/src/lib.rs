@@ -11,7 +11,7 @@ use wasm_bindgen::prelude::*;
 #[wasm_bindgen]
 #[derive(Debug)]
 pub struct Input {
-    inmune: usize,
+    immune: usize,
     concert_hall: bool,
     bakery: bool,
     school: bool,
@@ -56,12 +56,12 @@ impl Input {
     fn simulation(&self, num_simulations: usize) -> Simulation {
         SimulationBuilder {
             board_builder: BoardBuilder {
-                healthy: 98 - self.inmune,
+                healthy: 98 - self.immune,
                 infected1: 2,
                 infected2: 0,
                 infected3: 0,
                 sick: 0,
-                inmune: self.inmune,
+                immune: self.immune,
                 buildings: self.buildings(),
                 spreading: SPREADING,
             },
@@ -87,7 +87,7 @@ impl Input {
         out += "---------------------+--+--+--+--+--+--+--+--+--+--+--\n";
         out += &format!("{:<22}", "healthy / gesund");
         for day in 0..=10 {
-            out += &format!("{:<3}", diagram[0][day] + self.inmune);
+            out += &format!("{:<3}", diagram[0][day] + self.immune);
         }
         out += "\n";
         out += &format!("{:<22}", "infected / infiziert");
@@ -111,24 +111,27 @@ impl Input {
         let simulation = self.simulation(quantity);
         // Main computation
         let _timer_run = debug::Timer::new("Running many simulations");
-        let report_last_day = simulation.run_last_day();
+        let report = simulation.run();
         let normalization = *simulation.report_plan().num_simulations() as f32;
         // Summarizing
-        let healthy_average = report_last_day[&Individual::Healthy].iter()
+        let healthy_average = report.individual_last(&Individual::Healthy).iter()
+            .cloned()
             .sum::<usize>() as f32 / normalization;
-        let healthy_and_inmune_average = healthy_average +
-            report_last_day[&Individual::Inmune].iter()
+        let healthy_and_immune_average = healthy_average +
+            report.individual_last(&Individual::Immune).iter()
+                .cloned()
                 .sum::<usize>() as f32 / normalization;
-        let sick_average = report_last_day[&Individual::Sick].iter()
+        let sick_average = report.individual_last(&Individual::Sick).iter()
+            .cloned()
             .sum::<usize>() as f32 / normalization;
         let contained_average = (0..*simulation.report_plan().num_simulations())
             .map(|sim_index| {
-                let infected_sim = report_last_day[&Individual::Infected1][sim_index]
-                    + report_last_day[&Individual::Infected2][sim_index]
-                    + report_last_day[&Individual::Infected3][sim_index];
-                let healthy_or_inmune_sim = report_last_day[&Individual::Healthy][sim_index]
-                    + report_last_day[&Individual::Inmune][sim_index];
-                (infected_sim == 0) && (healthy_or_inmune_sim > 0)
+                let infected_sim = report.individual_last(&Individual::Infected1)[sim_index]
+                    + report.individual_last(&Individual::Infected2)[sim_index]
+                    + report.individual_last(&Individual::Infected3)[sim_index];
+                let healthy_or_immune_sim = report.individual_last(&Individual::Healthy)[sim_index]
+                    + report.individual_last(&Individual::Immune)[sim_index];
+                (infected_sim == 0) && (healthy_or_immune_sim > 0)
             })
             .map(|b| if b { 1 } else { 0 })
             .sum::<usize>() as f32 / normalization;
@@ -138,11 +141,11 @@ impl Input {
         let mut out = String::new();
         out += "Mean after 10 days / Mittelwert nach 10 Tagen\n";
         out += "---------------------------------------------\n";
-        out += &format!("{:<6.2}", healthy_and_inmune_average);
+        out += &format!("{:<6.2}", healthy_and_immune_average);
         out += "healthy (incl. vaccinated) / gesund (inkl. Geimpfte)\n";
         out += &format!("{:<6.2}", sick_average);
         out += "sick / krank\n";
-        out += &format!("{:<6}", format!("{:.0}%", 100. * healthy_average / (98 - self.inmune) as f32));
+        out += &format!("{:<6}", format!("{:.0}%", 100. * healthy_average / (98 - self.immune) as f32));
         out += "unvaccinated people still healthy / noch gesunde nicht-Geimpfte\n";
         out += &format!("{:<6}", format!("{:.0}%", 100. * contained_average));
         out += "contained outbreaks / eingedämmte Ausbrüche\n\n\
@@ -160,7 +163,7 @@ impl Input {
 impl Input {
     pub fn new
     (
-        inmune_init: usize,
+        immune_init: usize,
         concert_hall: bool,
         bakery: bool,
         school: bool,
@@ -172,7 +175,7 @@ impl Input {
     ) -> Self {
         utils::set_panic_hook();
         let input = Input {
-            inmune: inmune_init,
+            immune: immune_init,
             concert_hall,
             bakery,
             school,
@@ -225,12 +228,15 @@ mod tests {
         let result = Input::new(98, true, true, true, true, true, true, true, true)
             .message_many(100);
         let expected = String::from("\
-            Mean after 10 days\n\
-            ------------------\n\
-            98.00 healthy\n\
-            2.00  sick\n\
-            NaN%  unvaccinated people still healthy\n\
-            100%  contained outbreaks\n\
+            Mean after 10 days / Mittelwert nach 10 Tagen\n\
+            ---------------------------------------------\n\
+            98.00 healthy (incl. vaccinated) / gesund (inkl. Geimpfte)\n\
+            2.00  sick / krank\n\
+            NaN%  unvaccinated people still healthy / noch gesunde nicht-Geimpfte\n\
+            100%  contained outbreaks / eingedämmte Ausbrüche\n\n\
+
+            An outbreak is contained if the virus can no longer spread before infecting everyone.\n\
+            Ein Ausbruch gilt als eingedämmt wenn das Virus sich nicht mehr weiter ausbreiten kann vordem es alle infiziert hat.\
         ");
         assert_eq!(result, expected);
     }

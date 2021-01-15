@@ -24,8 +24,8 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn approx_infection_probability(report: Report) -> average::Variance {
-	let healthy_initial = report.healthy_initial() as f64;
-	let healthy_last: Vec<f64> = report.healthy_last().iter().map(|&&n| n as f64).collect();
+	let healthy_initial = report.individual_first(&Individual::Healthy) as f64;
+	let healthy_last: Vec<f64> = report.individual_last(&Individual::Healthy).iter().map(|&&n| n as f64).collect();
 	healthy_last.iter()
 		.map(|x| 1. - x / healthy_initial)
 		.collect()
