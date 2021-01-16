@@ -71,7 +71,7 @@ impl BoardBuilder {
 #[derive(Debug, Clone, PartialEq, Eq, Getters, MutGetters)]
 pub struct Board {
 	/// Current population in the game
-    #[getset(get = "pub")]
+    #[getset(get = "pub", get_mut)]
     population: Population,
     /// Current state of the buildings in the game
     #[getset(get = "pub")]
@@ -111,9 +111,9 @@ impl Board {
 	/// assert_eq!(board.population().counting(Individual::Immune), 1);
 	/// ```
 	pub fn immunize(&mut self) -> Result<&mut Self, crate::errors::ActionError> {
-		self.population.immunize()?;
+		self.population_mut().immunize()?;
+		self.recording_mut().immunize()?;
 		Ok(self)
-		// There is no recording of this action!!
 	}
 
 	/// Reverse one individual from immune to healthy in the population. 
@@ -134,9 +134,9 @@ impl Board {
 	/// assert_eq!(board.population().counting(Individual::Immune), 0);
 	/// ```
 	pub fn reverse_immunize(&mut self) -> Result<&mut Self, crate::errors::ActionError> {
-		self.population.reverse_immunize()?;
+		self.population_mut().reverse_immunize()?;
+		self.recording_mut().reverse_immunize()?;
 		Ok(self)
-		// There is no recording of this action!!
 	}
 
 	/// Advance the specified number of stages in the game.
@@ -157,7 +157,7 @@ impl Board {
 	pub fn advance_population(&mut self) -> usize {
 		self.visit();
 		self.propagate();
-		self.go_back()
+		self.go_home()
 	}
 
 
@@ -180,16 +180,14 @@ impl Board {
 	///
 	/// If visiting any of the building fails.
 	pub fn visit(&mut self) -> &mut Self {
+		// Randomness
 		self.population.shuffle(&mut rand::thread_rng());
+		// Visiting
 		for index in 0..self.buildings.len() {
 			self.visit_building(index);
 		}
-		loop {
-			match self.population.next() {
-				Some(i) => self.inactive.push(i),
-				None => break,
-			}
-		}
+		// Remaining individuals are stored in inactive 
+		self.inactive.extend(self.population.clone()); 
 		self
 	}
 
@@ -212,8 +210,18 @@ impl Board {
 	///
 	/// In this step, virus is propagated in each building.
 	pub fn propagate(&mut self) {
+		// Buildings
 		for building in self.buildings.iter_mut() {
 			building.propagate();
+		}
+		// Inactive
+		for i in self.inactive.iter_mut() {
+			*i = match i {
+				Individual::Infected1 => Individual::Infected2,
+				Individual::Infected2 => Individual::Infected3,
+				Individual::Infected3 => Individual::Sick,
+				_ => *i,
+			}
 		}
 	}
 
@@ -221,14 +229,15 @@ impl Board {
 	///
 	/// In this step, the population returns home. 
 	/// Outputs the number of newly infected.
-	pub fn go_back(&mut self) -> usize {
+	pub fn go_home(&mut self) -> usize {
 		let mut new_vec = Vec::new();
-		// Collect from buildings
+		// Collect 
+		// From buildings
 		for building in self.buildings.iter_mut() {
 			new_vec.append(&mut building.empty())
 		}
 		let newly_infected: usize = new_vec.iter().filter(|&&i| i == Individual::Infected1).count();
-
+		// From inactive
 		new_vec.append(&mut self.inactive);
 		let new_population = Population::from(new_vec);
 
@@ -347,6 +356,21 @@ mod tests {
 	}
 
 	#[test]
+	fn visit2() {
+		let population = Population::from(vec![Individual::Infected1, Individual::Infected1]);
+		let buildings = vec![Building::unchecked_from(array![[None]])];
+		let default = Board::default();
+		let mut board = Board{
+			population,
+			buildings,
+			..default
+		};
+		board.visit();
+		let expected = vec![Individual::Infected1];
+		assert_eq!(board.inactive, expected);
+	}
+
+	#[test]
 	fn visit_building1() {
 		let population = Population::from(vec![Individual::Healthy]);
 		let buildings = vec![Building::unchecked_from(array![[None]])];
@@ -372,11 +396,38 @@ mod tests {
 
 	#[test]
 	fn propagate() {
-		let population = Population::from(vec![Individual::Healthy, Individual::Infected1]);
+		let population = Population::from(vec![Individual::Infected1, Individual::Infected1]);
 		let buildings = vec![Building::unchecked_from(array![[Individual::Healthy, Individual::Infected1]])];
-		let mut board = Board::new(population, buildings);
+		let mut board = Board::new(population.clone(), buildings);
+		board.visit(); // Fills the inactive vector
 		board.propagate();
 		assert_eq!(board.buildings()[0], Building::unchecked_from(array![[Individual::Infected1, Individual::Infected2]]));
+		assert_eq!(board.population(), &population); // All buildings were full so the population was only shuffled!
+		assert_eq!(board.inactive, vec![Individual::Infected2, Individual::Infected2]); // Propagation at home!
+	}
+
+	#[test]
+	fn advance_population1() {
+		let population = Population::from(vec![Individual::Healthy, Individual::Sick, Individual::Immune]);
+		let buildings = vec![Building::new(2, 2, "My bulding")];
+		let mut board = Board::new(population, buildings);
+		assert_eq!(board.advance_population(), 0);
+	}
+
+	#[test]
+	fn advance() {
+		let mut board = Board::default();
+		for _ in 0..96 {
+			board.immunize().unwrap();
+		}
+		assert_eq!(board.population().counting(Individual::Immune), 96);
+		board.advance_many(8);
+		for _ in 0..10 {
+			board.advance();
+			if board.population().counting(Individual::Infected1) != 0 {
+				panic!("Recording table:\n{}", board.recording().counting_table());
+			}
+		}
 	}
 
 	#[test]

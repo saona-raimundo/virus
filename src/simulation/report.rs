@@ -5,10 +5,6 @@ use getset::{Getters, Setters, MutGetters};
 use serde::{Serialize, Deserialize};
 use strum::IntoEnumIterator;
 
-// mod last_day;
-
-// pub use last_day::*;
-
 /// Builder for `Report`.
 #[derive(Debug, Clone, PartialEq, Eq, Getters, Setters, MutGetters, Serialize, Deserialize, Default)]
 pub struct ReportPlan {

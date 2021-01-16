@@ -2,7 +2,7 @@ mod utils;
 #[macro_use]
 mod debug;
 
-const DEBUG: bool = false;
+const DEBUG: bool = true;
 const SPREADING: Spreading = Spreading::OneVeryNear;
 
 use virus_alarm::prelude::*;
@@ -124,16 +124,15 @@ impl Input {
         let sick_average = report.individual_last(&Individual::Sick).iter()
             .cloned()
             .sum::<usize>() as f32 / normalization;
-        let contained_average = (0..*simulation.report_plan().num_simulations())
-            .map(|sim_index| {
-                let infected_sim = report.individual_last(&Individual::Infected1)[sim_index]
-                    + report.individual_last(&Individual::Infected2)[sim_index]
-                    + report.individual_last(&Individual::Infected3)[sim_index];
-                let healthy_or_immune_sim = report.individual_last(&Individual::Healthy)[sim_index]
-                    + report.individual_last(&Individual::Immune)[sim_index];
-                (infected_sim == 0) && (healthy_or_immune_sim > 0)
+        let contained_average = report.counting_tables().iter()
+            .map(|counting_table| {
+                if counting_table.is_contained() {
+                    1
+                } else {
+                    debug!("Not contained simulation!\n{}", counting_table);
+                    0
+                }
             })
-            .map(|b| if b { 1 } else { 0 })
             .sum::<usize>() as f32 / normalization;
         std::mem::drop(_timer_run);
 

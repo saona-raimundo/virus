@@ -105,18 +105,8 @@ impl Component for Model {
                     .cloned()
                     .sum::<usize>() as f32
                     / normalization;
-                let contained_average = (0..NUM_SIMULATIONS)
-                    .map(|sim_index| {
-                        let infected_sim = report.individual_last(&Individual::Infected1)
-                            [sim_index]
-                            + report.individual_last(&Individual::Infected2)[sim_index]
-                            + report.individual_last(&Individual::Infected3)[sim_index];
-                        let healthy_or_immune_sim = report.individual_last(&Individual::Healthy)
-                            [sim_index]
-                            + report.individual_last(&Individual::Immune)[sim_index];
-                        (infected_sim == 0) && (healthy_or_immune_sim > 0)
-                    })
-                    .map(|b| if b { 1 } else { 0 })
+                let contained_average = report.counting_tables().iter()
+                    .map(|counting_table| { if counting_table.is_contained() { 1 } else { 0 } })
                     .sum::<usize>() as f32
                     / normalization;
                 let immune = self.board.population().counting(Individual::Immune);
@@ -274,13 +264,11 @@ impl Component for Model {
             <pre id="output" name="output">
                 { self.output() }
             </pre>
-             <footer>
-                <p>
-                    { "Author: Raimundo Saona" }
-                    <br/>
-                    <a href="mailto:raimundojulian.saonaurmeneta@ist.ac.at">{ "raimundojulian.saonaurmeneta@ist.ac.at" }</a>
+            <footer id="footer" name="footnote">
+                <p id="authorship" name="authorship">
+                    { "Author: " }<a href="https://saona-raimundo.github.io/">{ "Raimundo Saona" }</a>
                 </p>
-            </footer> 
+            </footer>
             </>
         }
     }
