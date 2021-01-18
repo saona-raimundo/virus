@@ -1,0 +1,13 @@
+#actions {
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+#SimulateButton {
+    margin-left: 6px;
+}
+#SimulateManyButton {
+    margin-left: 6px;
+}
+#output {
+    min-height: 240px;
+}
