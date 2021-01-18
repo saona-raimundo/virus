@@ -37,7 +37,7 @@ pub fn diagram(diagram: &[Vec<usize>; 3]) -> Html {
 }
 
 pub fn report(report: &[f32; 4]) -> Html {
-    html!{
+    html! {
         <>
         <table summary="Average result at the final day" id="simulation_many">
             <caption hidden=true>{ "Results" }</caption>
@@ -46,7 +46,7 @@ pub fn report(report: &[f32; 4]) -> Html {
             </tr>
             <tr>
                 <td>{ format!("{:.2}",report[0]) }</td>
-                <td>{ "healthy (incl. vaccinated) / gesund (inkl. Geimpfte)" }</td>                
+                <td>{ "healthy (incl. vaccinated) / gesund (inkl. Geimpfte)" }</td>
             </tr>
             <tr>
                 <td>{ format!("{:.2}",report[1]) }</td>
@@ -59,17 +59,20 @@ pub fn report(report: &[f32; 4]) -> Html {
             <tr>
                 <td>{ format!("{:.2}%",report[3]) }</td>
                 <td>
-                    { "contained outbreaks / eingedämmte Ausbrüche [1]" }
-                    <a href="#contained"></a>
+                    { "contained outbreaks / eingedämmte Ausbrüche " }
+                    <sup>
+                        { "[1]" }
+                        // <a href="#contained">{ "[1]" }</a>
+                    </sup>
                 </td>
             </tr>
         </table>
-        <p id="contained">{ 
+        <p id="contained">{
             "[1] An outbreak is contained if the virus can no \
             longer spread before infecting everyone.\n\
             Ein Ausbruch gilt als eingedämmt wenn das Virus \
             sich nicht mehr weiter ausbreiten kann vordem es \
-            alle infiziert hat." 
+            alle infiziert hat."
         }</p>
         </>
     }

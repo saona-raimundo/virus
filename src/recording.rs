@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::{Building, Individual, Population};
+use crate::{Building, Individual, Population, prelude::Spreading};
 use getset::{Getters, MutGetters};
 use strum::IntoEnumIterator;
 
@@ -80,6 +80,16 @@ impl Recording {
 	/// Increments the count of statges by one
 	fn increment_time(&mut self) -> &mut Self {
 		self.timeline += 1;
+		self
+	}
+
+	/// Changes the spreading mode. 
+	///
+	/// See `Spreading` for more. 
+	pub(crate) fn set_spreading(&mut self, new_spreading: Spreading) -> &mut Self {
+		for (building, _) in self.penalty_mut().iter_mut() {
+			building.set_spreading(new_spreading);
+		}
 		self
 	}
 

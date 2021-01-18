@@ -1,20 +1,35 @@
-#![recursion_limit = "1024"]
+#![recursion_limit = "2048"]
 
-const DEBUG: bool = true;
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen(start)]
+pub fn run_app() {
+    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
+    yew::start_app::<Model>();
+}
+
+const DEBUG: bool = false;
 const NUM_SIMULATIONS: usize = 100;
 
 mod debugging;
 mod displaying;
 use crate::debugging::*;
 
+// Crates
 use virus_alarm::prelude::*;
-use wasm_bindgen::prelude::*;
 use yew::prelude::*;
 
+// Structs
+use virus_alarm::building::Spreading;
+use core::time::Duration;
+use yew::services::timeout::TimeoutTask;
+use yew::services::TimeoutService;
+
+// Traits
 use core::fmt::Debug;
 
 #[derive(Debug)]
-enum Msg {
+pub enum Msg {
     // Input
     Inmune(ChangeData),
     ToggleConcertHall,
@@ -25,25 +40,27 @@ enum Msg {
     ToggleGym,
     ToggleSupermarket,
     ToggleShoppingCenter,
+    SpreadingMode(ChangeData),
     // Action
-    Simulate,
-    SimulateMany,
+    LoadSimulate,
+    ComputeSimulate,
     LoadSimulateMany,
+    ComputeSimulateMany,
 }
 
 #[derive(Debug, PartialEq)]
 enum Output {
     Simulation([Vec<usize>; 3]),
     SimulationMany([f32; 4]),
-    Loading,
 }
 
 #[derive(Debug)]
-struct Model {
+pub struct Model {
     // `ComponentLink` is like a reference to a component.
     // It can be used to send messages to the component
     link: ComponentLink<Self>,
     board: Board,
+    job: Option<TimeoutTask>,
     output: Option<Output>,
 }
 
@@ -52,16 +69,27 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_props: Self::Properties, link: ComponentLink<Self>) -> Self {
+        let board = Board::default().set_spreading(Spreading::OneVeryNear).to_owned();
         Self {
             link,
-            board: Board::default(),
+            board,
+            job: None,
             output: None,
         }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
-            Msg::Simulate => {
+            Msg::LoadSimulate => {
+                let handle = TimeoutService::spawn(
+                    Duration::from_nanos(1),
+                    self.link.callback(|_| Msg::ComputeSimulate),
+                );
+                self.job = Some(handle);
+                true
+            }
+            Msg::ComputeSimulate => {
+                self.job = None;
                 time("One simulation");
                 let diagram = self
                     .board
@@ -74,7 +102,16 @@ impl Component for Model {
                 time_end("One simulation");
                 true
             }
-            Msg::SimulateMany => {
+            Msg::LoadSimulateMany => {
+                let handle = TimeoutService::spawn(
+                    Duration::from_nanos(1),
+                    self.link.callback(|_| Msg::ComputeSimulateMany),
+                );
+                self.job = Some(handle);
+                true
+            }
+            Msg::ComputeSimulateMany => {
+                self.job = None;
                 time("Many simulations");
                 let report = Simulation::new(
                     self.board.clone(),
@@ -105,8 +142,18 @@ impl Component for Model {
                     .cloned()
                     .sum::<usize>() as f32
                     / normalization;
-                let contained_average = report.counting_tables().iter()
-                    .map(|counting_table| { if counting_table.is_contained() { 1 } else { 0 } })
+                let contained_average = report
+                    .counting_tables()
+                    .iter()
+                    .map(
+                        |counting_table| {
+                            if counting_table.is_contained() {
+                                1
+                            } else {
+                                0
+                            }
+                        },
+                    )
                     .sum::<usize>() as f32
                     / normalization;
                 let immune = self.board.population().counting(Individual::Immune);
@@ -119,11 +166,6 @@ impl Component for Model {
                 ]));
                 time_end("Many simulations");
                 true
-            }
-            Msg::LoadSimulateMany => {
-                self.output = Some(Output::Loading);
-                self.link.send_message(Msg::SimulateMany);
-                false
             }
             Msg::Inmune(change_data) => {
                 time("Change immune");
@@ -180,6 +222,30 @@ impl Component for Model {
                 self.board.toggle("Shopping Center");
                 false
             }
+            Msg::SpreadingMode(change_data) => {
+                if let ChangeData::Value(s) = change_data {
+                    match s.as_str() {
+                        "Everyone" => {
+                            debug("Seting Spreading to Everyone");
+                            self.board.set_spreading(Spreading::Everyone);
+                        }
+                        "One" => {
+                            debug("Seting Spreading to One");
+                            self.board.set_spreading(Spreading::One);
+                        }
+                        "OneNear" => {
+                            debug("Seting Spreading to OneNear");
+                            self.board.set_spreading(Spreading::OneNear);
+                        }
+                        "OneVeryNear" => {
+                            debug("Seting Spreading to OneVeryNear");
+                            self.board.set_spreading(Spreading::OneVeryNear);
+                        }
+                        _ => todo!(),
+                    }
+                }
+                true
+            }
         }
     }
 
@@ -193,17 +259,14 @@ impl Component for Model {
         false
     }
 
-    fn destroy(&mut self) {
-        if self.output == Some(Output::Loading) {
-            self.link.send_message(Msg::SimulateMany);
-        }
-    }
-
     fn view(&self) -> Html {
-        debug(self);
+        // debug(self);
+        let has_job = self.job.is_some();
         html! {
             <>
-            { "Hi! Please set the configuration before simulating. / Bitte hier die Einstellungen festlegen." }
+            <p>
+                { "Hi! Please set the configuration before simulating. / Bitte hier die Einstellungen festlegen." }
+            </p>
             <form id="input_form" name="input_form">
                 <fieldset>
                 <legend>{ "Vaccinated individuals / Geimpfte" }</legend>
@@ -250,11 +313,30 @@ impl Component for Model {
                         <label for="shopping_center">{ " Shopping Center (8)" }</label>
                     </div>
                 </fieldset>
+                <fieldset hidden=false>
+                <legend>{ "Spreading mode" }</legend>
+                    <input type="radio" id="everyone" name="everyone" value="Everyone" checked=self.board.spreading()==&Spreading::Everyone onchange=self.link.callback(|s| Msg::SpreadingMode(s))/>
+                    <label for="everyone">
+                        { " Everyone" }
+                    </label><br/>
+                    <input type="radio" id="one" name="one" value="One" checked=self.board.spreading()==&Spreading::One onchange=self.link.callback(|s| Msg::SpreadingMode(s))/>
+                    <label for="one">
+                        { " One" }
+                    </label><br/>
+                    <input type="radio" id="one_near" name="one_near" value="OneNear" checked=self.board.spreading()==&Spreading::OneNear onchange=self.link.callback(|s| Msg::SpreadingMode(s))/>
+                    <label for="one">
+                        { " OneNear" }
+                    </label><br/>
+                    <input type="radio" id="one_very_near" name="one_very_near" value="OneVeryNear" checked=self.board.spreading()==&Spreading::OneVeryNear onchange=self.link.callback(|s| Msg::SpreadingMode(s))/>
+                    <label for="one">
+                        { " OneVeryNear" }
+                    </label>
+                </fieldset>
             </form>
 
             <div id="actions" name="actions">
-                <button onclick=self.link.callback(|_| Msg::Simulate)>{ "Simulate!" }</button>
-                <button onclick=self.link.callback(|_| Msg::LoadSimulateMany)>{ format!("Simulate {}x!", NUM_SIMULATIONS) }</button>
+                <button id="SimulateButton" name="SimulateButton" disabled=has_job onclick=self.link.callback(|_| Msg::LoadSimulate)>{ "Simulate!" }</button>
+                <button id="SimulateManyButton" name="SimulateManyButton" disabled=has_job onclick=self.link.callback(|_| Msg::LoadSimulateMany)>{ format!("Simulate {}x!", NUM_SIMULATIONS) }</button>
             </div>
 
             <noscript>
@@ -276,17 +358,16 @@ impl Component for Model {
 
 impl Model {
     fn output(&self) -> Html {
-        match &self.output {
-            Some(Output::Simulation(diagram)) => displaying::diagram(diagram),
-            Some(Output::SimulationMany(report)) => displaying::report(report),
-            Some(Output::Loading) => html! { "Loading!" },
-            None => html! {},
+        if self.job.is_some() {
+            html! {"Computing!"}
+        } else {
+            match &self.output {
+                Some(Output::Simulation(diagram)) => displaying::diagram(diagram),
+                Some(Output::SimulationMany(report)) => displaying::report(report),
+                None => {
+                    html! {}
+                }
+            }
         }
     }
-}
-
-#[wasm_bindgen(start)]
-pub fn run_app() {
-    std::panic::set_hook(Box::new(console_error_panic_hook::hook));
-    App::<Model>::new().mount_to_body();
 }

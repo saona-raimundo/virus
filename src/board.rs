@@ -84,7 +84,15 @@ pub struct Board {
 
 impl Board {
 	/// Creates a new board with the specified population and buildings as default.
+	///
+	/// # Panics
+	///
+	/// If not all buildings have the same spreading mode.
 	pub fn new(population: Population, buildings: Vec<Building>) -> Self {
+		assert_eq!(
+			buildings.iter().map(|b| b.spreading()).min(), 
+			buildings.iter().map(|b| b.spreading()).max()
+		);
 		let default = Board::default();
 		let recording = Recording::new(population.clone(), buildings.clone());
 		Board {
@@ -281,6 +289,26 @@ impl Board {
 		self
 	}
 
+	/// Returns the spreading mode. 
+	///
+	/// See `Spreading` for more. 
+	///
+	/// # Panics
+	///
+	/// If there are no buildings.
+	///
+	/// # Examples
+	///
+	/// Checking the default value.
+	/// ```
+	/// # use virus_alarm::prelude::*;
+	/// let board = Board::default();
+	/// assert_eq!(&Spreading::OneNear, board.spreading());
+	/// ```
+	pub fn spreading(&self) -> &Spreading {
+		self.buildings()[0].spreading()
+	}
+
 	/// Changes the spreading mode. 
 	///
 	/// See `Spreading` for more. 
@@ -288,6 +316,7 @@ impl Board {
 		for building in self.buildings.iter_mut() {
 			building.set_spreading(new_spreading);
 		}
+		self.recording_mut().set_spreading(new_spreading);
 		self
 	}
 

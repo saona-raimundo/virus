@@ -5,7 +5,7 @@ Virus alarm simulations.
 
 ## Web app
 
-Check out our basic [simulation tool](examples/web_app/www/dist/index.html)!
+Check out our basic [simulation tool](examples/yew_app/static/index.html)!
 
 ## Feature
 
