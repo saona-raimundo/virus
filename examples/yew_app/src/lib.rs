@@ -9,6 +9,7 @@ pub fn run_app() {
 }
 
 const DEBUG: bool = false;
+const HIDDEN: bool = false;
 const NUM_SIMULATIONS: usize = 100;
 
 mod debugging;
@@ -161,7 +162,7 @@ impl Component for Model {
                 self.output = Some(Output::SimulationMany([
                     healthy_and_immune_average,
                     sick_average,
-                    healthy_average / (98 - immune) as f32,
+                    100. * healthy_average / (98 - immune) as f32,
                     100. * contained_average,
                 ]));
                 time_end("Many simulations");
@@ -313,7 +314,7 @@ impl Component for Model {
                         <label for="shopping_center">{ " Shopping Center (8)" }</label>
                     </div>
                 </fieldset>
-                <fieldset hidden=false>
+                <fieldset hidden=HIDDEN>
                 <legend>{ "Spreading mode" }</legend>
                     <input type="radio" id="everyone" name="everyone" value="Everyone" checked=self.board.spreading()==&Spreading::Everyone onchange=self.link.callback(|s| Msg::SpreadingMode(s))/>
                     <label for="everyone">
