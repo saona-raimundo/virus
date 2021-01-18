@@ -317,19 +317,19 @@ impl Component for Model {
                 <legend>{ "Spreading mode" }</legend>
                     <input type="radio" id="everyone" name="everyone" value="Everyone" checked=self.board.spreading()==&Spreading::Everyone onchange=self.link.callback(|s| Msg::SpreadingMode(s))/>
                     <label for="everyone">
-                        { " Everyone" }
+                        { " Everyone in the same building" }
                     </label><br/>
                     <input type="radio" id="one" name="one" value="One" checked=self.board.spreading()==&Spreading::One onchange=self.link.callback(|s| Msg::SpreadingMode(s))/>
                     <label for="one">
-                        { " One" }
+                        { " One other in the same building" }
                     </label><br/>
                     <input type="radio" id="one_near" name="one_near" value="OneNear" checked=self.board.spreading()==&Spreading::OneNear onchange=self.link.callback(|s| Msg::SpreadingMode(s))/>
                     <label for="one">
-                        { " OneNear" }
+                        { " Vertical, horizontal and diagonal transmissions" }
                     </label><br/>
                     <input type="radio" id="one_very_near" name="one_very_near" value="OneVeryNear" checked=self.board.spreading()==&Spreading::OneVeryNear onchange=self.link.callback(|s| Msg::SpreadingMode(s))/>
                     <label for="one">
-                        { " OneVeryNear" }
+                        { " Vertical and horizontal transmissions" }
                     </label>
                 </fieldset>
             </form>
