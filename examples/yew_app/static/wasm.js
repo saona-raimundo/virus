@@ -277,7 +277,8 @@ async function load(module, imports) {
 
 async function init(input) {
     if (typeof input === 'undefined') {
-        input = import.meta.url.replace(/\.js$/, '_bg.wasm');
+        // input = import.meta.url.replace(/\.js$/, '_bg.wasm');
+        input = 'wasm_bg.wasm';
     }
     const imports = {};
     imports.wbg = {};
@@ -573,11 +574,11 @@ async function init(input) {
         var ret = wasm.memory;
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper514 = function(arg0, arg1, arg2) {
+    imports.wbg.__wbindgen_closure_wrapper513 = function(arg0, arg1, arg2) {
         var ret = makeMutClosure(arg0, arg1, 145, __wbg_adapter_18);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper515 = function(arg0, arg1, arg2) {
+    imports.wbg.__wbindgen_closure_wrapper514 = function(arg0, arg1, arg2) {
         var ret = makeMutClosure(arg0, arg1, 145, __wbg_adapter_21);
         return addHeapObject(ret);
     };

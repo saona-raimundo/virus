@@ -340,10 +340,6 @@ impl Component for Model {
                 <button id="SimulateManyButton" name="SimulateManyButton" disabled=has_job onclick=self.link.callback(|_| Msg::LoadSimulateMany)>{ format!("Simulate {}x!", NUM_SIMULATIONS) }</button>
             </div>
 
-            <noscript>
-                { "This page contains webassembly and javascript content, please enable javascript in your browser." }
-            </noscript>
-
             <pre id="output" name="output">
                 { self.output() }
             </pre>

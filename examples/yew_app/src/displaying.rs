@@ -2,6 +2,7 @@ use yew::prelude::*;
 use crate::HIDDEN;
 
 pub fn diagram(diagram: &[Vec<usize>; 3]) -> Html {
+    let immune = 98 - diagram[0][0];
     html! {
         <>
         <table summary="Evolution of the population" id="simulation_one">
@@ -21,8 +22,8 @@ pub fn diagram(diagram: &[Vec<usize>; 3]) -> Html {
                 <th scope="col">{ "10" }</th>
             </tr>
             <tr>
-                <td scope="row">{ "healthy / gesund" }</td>
-                { diagram[0].iter().map(|x| html!{<td>{ x }</td> }).collect::<Html>() }
+                <td scope="row">{ "healthy incl. vaccinated / gesund inkl. Geimpfte" }</td>
+                { diagram[0].iter().map(|x| html!{<td>{ x + immune }</td> }).collect::<Html>() }
             </tr>
             <tr>
                 <td scope="row">{ "total infected / Infizierte gesamt" }</td>
@@ -48,6 +49,10 @@ pub fn report(report: &[f32; 4]) -> Html {
             <tr>
                 <td>{ format!("{:.2}", report[0]) }</td>
                 <td>{ "healthy (incl. vaccinated) / gesund (inkl. Geimpfte)" }</td>
+            </tr>
+            <tr>
+                <td>{ format!("{:.2}", 98. - report[0]) }</td>
+                <td>{ "total infected / Infizierte gesamt" }</td>
             </tr>
             <tr>
                 <td>{ format!("{:.2}", report[1]) }</td>
