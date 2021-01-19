@@ -24,10 +24,7 @@ impl Individual {
     pub fn can_infect(&self, other: &Individual) -> bool {
         match self {
             Individual::Healthy | Individual::Sick | Individual::Immune => false,
-            _ => match other {
-                Individual::Healthy => true,
-                _ => false,
-            },
+            Individual::Infected1 | Individual::Infected2 | Individual::Infected3 => matches!(other, Individual::Healthy),
         }
     }
 

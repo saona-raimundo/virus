@@ -258,9 +258,8 @@ impl Board {
 
 	/// Closes a building
 	pub fn toggle<S: Display>(&mut self, name: S) -> &mut Self {
-		let name = name.to_string();
 		for building in self.buildings.iter_mut() {
-			if building.name() == &name {
+			if building.name() == name.to_string() {
 				building.toggle();
 			}
 		}
@@ -269,9 +268,8 @@ impl Board {
 
 	/// Closes a building
 	pub fn close<S: Display>(&mut self, name: S) -> &mut Self {
-		let name = name.to_string();
 		for building in self.buildings.iter_mut() {
-			if building.name() == &name {
+			if building.name() == name.to_string() {
 				building.close();
 			}
 		}
@@ -280,9 +278,8 @@ impl Board {
 
 	/// Opens a building
 	pub fn open<S: Display>(&mut self, name: S) -> &mut Self {
-		let name = name.to_string();
 		for building in self.buildings.iter_mut() {
-			if building.name() == &name {
+			if building.name() == name.to_string() {
 				building.open();
 			}
 		}

@@ -252,8 +252,8 @@ impl Building {
     /// If the building is already full or the individual is sick.
     pub fn try_push(&mut self, individual: Individual) -> Result<(), BuildingError> {
         if self.is_full() {
-            Err(BuildingError::Full)?
-        } if individual == Individual::Sick {
+            Err(BuildingError::Full)
+        } else if individual == Individual::Sick {
         	Err(BuildingError::Sick)
         } else {
             for i in self.people.iter_mut() {
@@ -409,7 +409,7 @@ impl TryFrom<Array2<Option<Individual>>> for Building {
     fn try_from(array: Array2<Option<Individual>>) -> Result<Self, Self::Error> {
         for i in array.iter() {
         	if let Some(Individual::Sick) = i {
-        		Err(BuildingError::Sick)?
+        		return Err(BuildingError::Sick)
         	}
         }
         Ok(Building::unchecked_from(array))

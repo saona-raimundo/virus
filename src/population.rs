@@ -97,6 +97,11 @@ impl Population {
 		self.population.len()
 	}
 
+	/// Returns true if there are no individuals.
+	pub fn is_empty(&self) -> bool {
+		self.population.is_empty()
+	}
+
 	/// Returns the number of individuals of the given type.
 	///
 	/// # Examples

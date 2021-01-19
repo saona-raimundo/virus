@@ -144,7 +144,7 @@ impl Recording {
 	/// # Panics
 	///
 	/// If the number of newly infected is larger than the number of healthy individuals available
-	pub(crate) fn register(&mut self, newly_infected: usize, _buildings: &Vec<Building>) -> &mut Self {
+	pub(crate) fn register(&mut self, newly_infected: usize, _buildings: &[Building]) -> &mut Self {
 		self.register_counting_table(newly_infected);
 		// self.register_penalty(buildings);
 		// self.register_daily_score(buildings);

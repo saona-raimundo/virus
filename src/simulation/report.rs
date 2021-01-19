@@ -42,7 +42,7 @@ impl Report {
         } else {
             let days = self.days();
             let mut average_array = Array2::from_elem((individual_variants_num, days), average::Variance::new());
-            let counting_tables: Vec<_> = self.counting_tables().iter().map(|counting_table| Array2::from(counting_table)).collect();
+            let counting_tables: Vec<_> = self.counting_tables().iter().map(Array2::from).collect();
             for row in 0..individual_variants_num {
                 for col in 0..days {
                     average_array[[row, col]] = counting_tables.iter().map(|counting_table| counting_table[[row, col]] as f64).collect();
