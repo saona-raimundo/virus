@@ -1,4 +1,5 @@
 use yew::prelude::*;
+use crate::HIDDEN;
 
 pub fn diagram(diagram: &[Vec<usize>; 3]) -> Html {
     html! {
@@ -24,12 +25,12 @@ pub fn diagram(diagram: &[Vec<usize>; 3]) -> Html {
                 { diagram[0].iter().map(|x| html!{<td>{ x }</td> }).collect::<Html>() }
             </tr>
             <tr>
-                <td scope="row">{ "infected / infiziert" }</td>
-                { diagram[1].iter().map(|x| html!{<td>{ x }</td> }).collect::<Html>() }
+                <td scope="row">{ "total infected / Infizierte gesamt" }</td>
+                { diagram[1].iter().zip(diagram[2].iter()).map(|(infected, sick)| html!{<td>{ infected + sick }</td> }).collect::<Html>() }
             </tr>
             <tr>
                 <td scope="row">{ "sick / krank" }</td>
-                { diagram[1].iter().map(|x| html!{<td>{ x }</td> }).collect::<Html>() }
+                { diagram[2].iter().map(|x| html!{<td>{ x }</td> }).collect::<Html>() }
             </tr>
         </table>
         </>
@@ -45,29 +46,28 @@ pub fn report(report: &[f32; 4]) -> Html {
                 <th scope="colgroup" colspan="2">{ "Mean after 10 days / Mittelwert nach 10 Tagen" }</th>
             </tr>
             <tr>
-                <td>{ format!("{:.2}",report[0]) }</td>
+                <td>{ format!("{:.2}", report[0]) }</td>
                 <td>{ "healthy (incl. vaccinated) / gesund (inkl. Geimpfte)" }</td>
             </tr>
             <tr>
-                <td>{ format!("{:.2}",report[1]) }</td>
+                <td>{ format!("{:.2}", report[1]) }</td>
                 <td>{ "sick / krank" }</td>
             </tr>
             <tr>
-                <td>{ format!("{:.2}%",report[2]) }</td>
+                <td>{ format!("{:.2}%", 100. * report[2]) }</td>
                 <td>{ "unvaccinated people still healthy / noch gesunde nicht-Geimpfte" }</td>
             </tr>
-            <tr>
-                <td>{ format!("{:.2}%",report[3]) }</td>
+            <tr hidden=HIDDEN>
+                <td>{ format!("{:.2}%", 100. * report[3]) }</td>
                 <td>
                     { "contained outbreaks / eingedämmte Ausbrüche " }
                     <sup>
                         { "[1]" }
-                        // <a href="#contained">{ "[1]" }</a>
                     </sup>
                 </td>
             </tr>
         </table>
-        <p id="contained">{
+        <p id="contained"  hidden=HIDDEN>{
             "[1] An outbreak is contained if the virus can no \
             longer spread before infecting everyone.\n\
             Ein Ausbruch gilt als eingedämmt wenn das Virus \
