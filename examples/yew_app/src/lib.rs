@@ -45,8 +45,8 @@ pub enum Msg {
     // Action
     LoadSimulate,
     ComputeSimulate,
-    LoadSimulateMany,
-    ComputeSimulateMany,
+    LoadSimulateMany(usize),
+    ComputeSimulateMany(usize),
 }
 
 #[derive(Debug, PartialEq)]
@@ -103,27 +103,27 @@ impl Component for Model {
                 time_end("One simulation");
                 true
             }
-            Msg::LoadSimulateMany => {
+            Msg::LoadSimulateMany(num_simulations) => {
                 let handle = TimeoutService::spawn(
                     Duration::from_nanos(1),
-                    self.link.callback(|_| Msg::ComputeSimulateMany),
+                    self.link.callback(move |_| Msg::ComputeSimulateMany(num_simulations)),
                 );
                 self.job = Some(handle);
                 true
             }
-            Msg::ComputeSimulateMany => {
+            Msg::ComputeSimulateMany(num_simulations) => {
                 self.job = None;
                 time("Many simulations");
                 let report = Simulation::new(
                     self.board.clone(),
                     ReportPlan {
-                        num_simulations: NUM_SIMULATIONS,
+                        num_simulations,
                         days: 10,
                     },
                 )
                 .run();
                 // Summarizing
-                let normalization = NUM_SIMULATIONS as f32;
+                let normalization = num_simulations as f32;
                 let healthy_average = report
                     .individual_last(&Individual::Healthy)
                     .iter()
@@ -337,7 +337,8 @@ impl Component for Model {
 
             <div id="actions" name="actions">
                 <button id="SimulateButton" name="SimulateButton" disabled=has_job onclick=self.link.callback(|_| Msg::LoadSimulate)>{ "Simulate!" }</button>
-                <button id="SimulateManyButton" name="SimulateManyButton" disabled=has_job onclick=self.link.callback(|_| Msg::LoadSimulateMany)>{ format!("Simulate {}x!", NUM_SIMULATIONS) }</button>
+                <button id="SimulateManyButton" name="SimulateManyButton" disabled=has_job onclick=self.link.callback(|_| Msg::LoadSimulateMany(NUM_SIMULATIONS))>{ format!("Simulate {}x!", NUM_SIMULATIONS) }</button>
+                <button hidden=HIDDEN id="SimulateExtraManyButton" name="SimulateExtraManyButton" disabled=has_job onclick=self.link.callback(|_| Msg::LoadSimulateMany(100 * NUM_SIMULATIONS))>{ format!("Simulate {}x!", 100 * NUM_SIMULATIONS) }</button>
             </div>
 
             <pre id="output" name="output">

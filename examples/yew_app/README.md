@@ -30,7 +30,7 @@ Then visit [http://localhost:8000/static/](http://localhost:8000/static/)
 
 ## Browser compatibility
 
-### Edge
+### Edge (old version)
 
 Add in `<head>` 
 
