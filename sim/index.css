@@ -11,3 +11,13 @@
 #output {
     min-height: 240px;
 }
+label:hover {
+  background-color: lightgray;
+}
+button {
+    padding: 1em;
+}
+button:hover {
+    padding: 0em;
+    border: 1em solid lightgray;
+}
