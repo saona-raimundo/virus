@@ -1,6 +1,14 @@
+form {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
 #actions {
     margin-top: 12px;
     margin-bottom: 12px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
 }
 #SimulateButton {
     margin-left: 6px;
